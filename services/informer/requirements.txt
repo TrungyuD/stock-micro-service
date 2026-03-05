@@ -1,0 +1,12 @@
+grpcio==1.68.0
+grpcio-tools==1.68.0
+grpcio-health-checking==1.68.0
+yfinance==0.2.48
+pandas==2.2.3
+psycopg2-binary==2.9.10
+python-dotenv==1.0.1
+APScheduler==3.10.4
+pydantic==2.10.0
+pydantic-settings==2.7.0
+requests==2.32.3
+pytz==2024.2

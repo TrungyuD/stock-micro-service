@@ -1,0 +1,65 @@
+// ecosystem.config.js — PM2 process manager config for stock-micro-service
+// Usage: pm2 start ecosystem.config.js
+module.exports = {
+  apps: [
+    {
+      name: 'gateway',
+      cwd: './gateway',
+      script: 'dist/main.js',
+      interpreter: 'node',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'development',
+        GATEWAY_PORT: 5301,
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        GATEWAY_PORT: 5301,
+      },
+      watch: false,
+      max_memory_restart: '512M',
+      error_file: './logs/gateway-error.log',
+      out_file: './logs/gateway-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    },
+    {
+      name: 'informer',
+      cwd: './services/informer',
+      script: 'src/server.py',
+      interpreter: './.venv/bin/python3',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        PYTHONPATH: './src',
+        GRPC_HOST: '0.0.0.0',
+        GRPC_PORT: 50051,
+        LOG_LEVEL: 'INFO',
+      },
+      watch: false,
+      max_memory_restart: '256M',
+      error_file: './logs/informer-error.log',
+      out_file: './logs/informer-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    },
+    {
+      name: 'analytics',
+      cwd: './services/analytics',
+      script: 'src/server.py',
+      interpreter: './.venv/bin/python3',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        PYTHONPATH: './src',
+        GRPC_HOST: '0.0.0.0',
+        GRPC_PORT: 50052,
+        LOG_LEVEL: 'INFO',
+      },
+      watch: false,
+      max_memory_restart: '256M',
+      error_file: './logs/analytics-error.log',
+      out_file: './logs/analytics-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    },
+  ],
+};

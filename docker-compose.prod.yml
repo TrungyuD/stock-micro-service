@@ -1,0 +1,19 @@
+# =============================================================================
+# Docker Compose — Production Overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # No port exposure in prod — services communicate via internal network
+    ports: []
+
+  pgadmin:
+    # Disable pgAdmin in production — use a bastion host or VPN instead
+    profiles:
+      - debug

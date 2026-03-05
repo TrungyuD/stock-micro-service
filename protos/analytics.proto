@@ -1,0 +1,228 @@
+syntax = "proto3";
+
+package stock.analytics.v1;
+
+// Note: common/types.proto not imported — analytics defines its own message types.
+// If shared types are needed later, add: import "common/types.proto";
+
+// ============================================
+// ANALYTICS SERVICE — Metrics & Indicators
+// ============================================
+
+service AnalyticsService {
+  // Valuation metrics
+  rpc GetValuationMetrics (GetValuationMetricsRequest) returns (GetValuationMetricsResponse);
+
+  // Technical indicators
+  rpc GetTechnicalIndicators (GetTechnicalIndicatorsRequest) returns (GetTechnicalIndicatorsResponse);
+
+  // Combined analysis
+  rpc GetStockAnalysis (GetStockAnalysisRequest) returns (GetStockAnalysisResponse);
+
+  // Batch analysis
+  rpc BatchAnalysis (BatchAnalysisRequest) returns (BatchAnalysisResponse);
+
+  // Stock screening
+  rpc ScreenStocks (ScreenStocksRequest) returns (ScreenStocksResponse);
+
+  // Trigger recalculation
+  rpc TriggerCalculation (TriggerCalculationRequest) returns (TriggerCalculationResponse);
+
+  // Health check
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// ============================================
+// VALUATION METRICS
+// ============================================
+
+message ValuationMetrics {
+  string symbol = 1;
+
+  double trailing_pe = 2;
+  double forward_pe = 3;
+  double current_eps = 4;
+  double price_to_book = 5;
+  double book_value_per_share = 6;
+  double peg_ratio = 7;
+  double earnings_growth_rate = 8;
+  double dividend_yield = 9;
+  double payout_ratio = 10;
+  double price_to_sales = 11;
+  double ev_to_ebitda = 12;
+
+  string valuation_signal = 13;    // "Undervalued", "Fair", "Overvalued"
+  double valuation_score = 14;     // 0-100
+
+  string calculated_at = 15;       // ISO 8601
+}
+
+message GetValuationMetricsRequest {
+  string symbol = 1;
+}
+
+message GetValuationMetricsResponse {
+  ValuationMetrics metrics = 1;
+}
+
+// ============================================
+// TECHNICAL INDICATORS
+// ============================================
+
+message RSI {
+  int32 period = 1;                // Default 14
+  double value = 2;                // 0-100
+  string signal = 3;               // "Overbought", "Oversold", "Neutral"
+}
+
+message MovingAverages {
+  double sma_20 = 1;
+  double sma_50 = 2;
+  double sma_200 = 3;
+  double ema_20 = 4;
+  double ema_50 = 5;
+  string trend_signal = 6;         // "Bullish", "Bearish", "Neutral"
+}
+
+message MACDIndicator {
+  double macd_line = 1;            // EMA12 - EMA26
+  double signal_line = 2;          // EMA9 of MACD
+  double histogram = 3;            // MACD - Signal
+  string signal = 4;               // "Bullish", "Bearish"
+}
+
+message BollingerBands {
+  double upper_band = 1;
+  double middle_band = 2;          // SMA20
+  double lower_band = 3;
+  double band_width = 4;
+  double percent_b = 5;            // Position within bands (0-1)
+}
+
+message TechnicalIndicators {
+  string symbol = 1;
+
+  RSI rsi = 2;
+  MovingAverages moving_averages = 3;
+  MACDIndicator macd = 4;
+  BollingerBands bollinger_bands = 5;
+
+  string overall_signal = 6;       // "Strong Buy", "Buy", "Neutral", "Sell", "Strong Sell"
+  int32 buy_signals = 7;
+  int32 sell_signals = 8;
+
+  string calculated_at = 9;        // ISO 8601
+}
+
+message GetTechnicalIndicatorsRequest {
+  string symbol = 1;
+  string timeframe = 2;            // "1d", "1wk" (default "1d")
+}
+
+message GetTechnicalIndicatorsResponse {
+  TechnicalIndicators indicators = 1;
+}
+
+// ============================================
+// COMBINED ANALYSIS
+// ============================================
+
+message StockAnalysis {
+  string symbol = 1;
+  string company_name = 2;
+  double current_price = 3;
+
+  ValuationMetrics valuation = 4;
+  TechnicalIndicators technicals = 5;
+
+  string recommendation = 6;       // "Strong Buy" to "Strong Sell"
+  double confidence_score = 7;     // 0-100
+  string rationale = 8;
+
+  string analysis_timestamp = 9;   // ISO 8601
+}
+
+message GetStockAnalysisRequest {
+  string symbol = 1;
+  bool include_rationale = 2;
+}
+
+message GetStockAnalysisResponse {
+  StockAnalysis analysis = 1;
+}
+
+// ============================================
+// BATCH ANALYSIS
+// ============================================
+
+message BatchAnalysisRequest {
+  repeated string symbols = 1;     // Max 50
+}
+
+message BatchAnalysisResponse {
+  repeated StockAnalysis analyses = 1;
+  repeated string failed_symbols = 2;
+}
+
+// ============================================
+// STOCK SCREENING
+// ============================================
+
+message ScreeningCriteria {
+  double min_pe = 1;
+  double max_pe = 2;
+  double min_peg = 3;
+  double max_peg = 4;
+  double min_dividend_yield = 5;
+  double max_dividend_yield = 6;
+  bool rsi_oversold = 7;           // RSI < 30
+  bool rsi_overbought = 8;         // RSI > 70
+  string trend_direction = 9;      // "Bullish", "Bearish"
+  string sector = 10;              // Filter by sector
+}
+
+message ScreenStocksRequest {
+  ScreeningCriteria criteria = 1;
+  int32 limit = 2;                 // Max results (default 20)
+  string sort_by = 3;              // "valuation_score", "pe_ratio", etc.
+}
+
+message ScreenedStock {
+  string symbol = 1;
+  string company_name = 2;
+  double current_price = 3;
+  double match_score = 4;
+  ValuationMetrics valuation = 5;
+  TechnicalIndicators technicals = 6;
+}
+
+message ScreenStocksResponse {
+  repeated ScreenedStock stocks = 1;
+  int32 total_matched = 2;
+}
+
+// ============================================
+// TRIGGER CALCULATION
+// ============================================
+
+message TriggerCalculationRequest {
+  repeated string symbols = 1;     // Empty = all active stocks
+  string calculation_type = 2;     // "technicals", "valuation", "all"
+}
+
+message TriggerCalculationResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+// ============================================
+// HEALTH CHECK
+// ============================================
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+  string uptime = 3;
+}

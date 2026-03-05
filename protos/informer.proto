@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package stock.informer.v1;
+
+import "common/types.proto";
+
+// ============================================
+// INFORMER SERVICE — Data Collection & Retrieval
+// ============================================
+
+service InformerService {
+  // Stock metadata
+  rpc GetStockInfo (GetStockInfoRequest) returns (GetStockInfoResponse);
+  rpc ListStocks (ListStocksRequest) returns (ListStocksResponse);
+  rpc BatchGetStocks (BatchGetStocksRequest) returns (BatchGetStocksResponse);
+
+  // OHLCV price history
+  rpc GetPriceHistory (GetPriceHistoryRequest) returns (GetPriceHistoryResponse);
+
+  // Financial reports
+  rpc GetFinancialReport (GetFinancialReportRequest) returns (GetFinancialReportResponse);
+  rpc GetFinancialReports (GetFinancialReportsRequest) returns (GetFinancialReportsResponse);
+
+  // Data collection triggers (admin)
+  rpc TriggerDataCollection (TriggerDataCollectionRequest) returns (TriggerDataCollectionResponse);
+
+  // Health check
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// ============================================
+// STOCK INFO
+// ============================================
+
+message GetStockInfoRequest {
+  string symbol = 1;
+}
+
+message GetStockInfoResponse {
+  stock.common.Stock stock = 1;
+}
+
+message ListStocksRequest {
+  string exchange = 1;             // Filter by exchange (optional)
+  string sector = 2;               // Filter by sector (optional)
+  string search = 3;               // Search by symbol or name (optional)
+  stock.common.PaginationRequest pagination = 4;
+}
+
+message ListStocksResponse {
+  repeated stock.common.Stock stocks = 1;
+  stock.common.PaginationResponse pagination = 2;
+}
+
+message BatchGetStocksRequest {
+  repeated string symbols = 1;     // Max 50 symbols
+}
+
+message BatchGetStocksResponse {
+  repeated stock.common.Stock stocks = 1;
+  repeated string not_found = 2;   // Symbols not in database
+}
+
+// ============================================
+// OHLCV PRICE HISTORY
+// ============================================
+
+message GetPriceHistoryRequest {
+  string symbol = 1;
+  string interval = 2;             // "1d" (daily), "1wk" (weekly), "1mo" (monthly)
+  string start_date = 3;           // ISO 8601: "2025-01-01"
+  string end_date = 4;             // ISO 8601: "2026-03-04"
+  int32 limit = 5;                 // Max records (default 365)
+}
+
+message GetPriceHistoryResponse {
+  string symbol = 1;
+  repeated stock.common.OHLCV candles = 2;
+  int32 total_records = 3;
+  string period_start = 4;
+  string period_end = 5;
+}
+
+// ============================================
+// FINANCIAL REPORTS
+// ============================================
+
+message FinancialReport {
+  string symbol = 1;
+  string report_date = 2;          // ISO 8601
+  string report_type = 3;          // "Annual" or "Quarterly"
+
+  // Income Statement
+  double revenue = 4;
+  double gross_profit = 5;
+  double operating_income = 6;
+  double net_income = 7;
+  double eps = 8;
+
+  // Balance Sheet
+  double total_assets = 9;
+  double total_liabilities = 10;
+  double shareholders_equity = 11;
+  double book_value_per_share = 12;
+
+  // Cash Flow
+  double operating_cash_flow = 13;
+  double free_cash_flow = 14;
+  double capex = 15;
+
+  // Key Metrics
+  int64 shares_outstanding = 16;
+  double debt_to_equity = 17;
+  double current_ratio = 18;
+  double roe = 19;
+  double roa = 20;
+}
+
+message GetFinancialReportRequest {
+  string symbol = 1;
+  string report_type = 2;          // "Annual" or "Quarterly"
+}
+
+message GetFinancialReportResponse {
+  FinancialReport report = 1;
+}
+
+message GetFinancialReportsRequest {
+  string symbol = 1;
+  string report_type = 2;          // Filter by type (optional)
+  int32 years_back = 3;            // How many years of history (default 5)
+}
+
+message GetFinancialReportsResponse {
+  repeated FinancialReport reports = 1;
+}
+
+// ============================================
+// DATA COLLECTION (Admin endpoints)
+// ============================================
+
+message TriggerDataCollectionRequest {
+  repeated string symbols = 1;     // Empty = all active stocks
+  string data_type = 2;            // "ohlcv", "financials", "metadata", "all"
+  string start_date = 3;           // For historical backfill
+}
+
+message TriggerDataCollectionResponse {
+  bool accepted = 1;
+  string job_id = 2;
+  string message = 3;
+}
+
+// ============================================
+// HEALTH CHECK
+// ============================================
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;               // "SERVING", "NOT_SERVING"
+  string version = 2;
+  string uptime = 3;
+}

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package stock.common;
+
+// ============================================
+// SHARED TYPES — used by Informer & Analytics
+// ============================================
+
+// Stock metadata
+message Stock {
+  int32 id = 1;
+  string symbol = 2;               // e.g., "AAPL"
+  string name = 3;                  // e.g., "Apple Inc."
+  string sector = 4;               // e.g., "Technology"
+  string industry = 5;             // e.g., "Consumer Electronics"
+  string exchange = 6;             // e.g., "NASDAQ"
+  string country = 7;              // e.g., "US"
+  string currency = 8;             // e.g., "USD"
+  int64 market_cap = 9;
+  string description = 10;
+  string website = 11;
+  bool is_active = 12;
+}
+
+// OHLCV candlestick data
+message OHLCV {
+  string date = 1;                  // ISO 8601: "2026-03-04"
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  int64 volume = 6;
+  double adjusted_close = 7;
+}
+
+// Pagination request parameters
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;             // Default 20, max 100
+}
+
+// Pagination response metadata
+message PaginationResponse {
+  int32 total_count = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+// Generic status response
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
