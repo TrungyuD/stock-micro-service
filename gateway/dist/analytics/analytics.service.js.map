@@ -1,1 +1,0 @@
-{"version":3,"file":"analytics.service.js","sourceRoot":"","sources":["../../src/analytics/analytics.service.ts"],"names":[],"mappings":";;;;;;;;;AAAA,2CAA4C;AAOrC,IAAM,gBAAgB,GAAtB,MAAM,gBAAgB;IAC3B,aAAa,CAAC,MAAc;QAC1B,OAAO,EAAE,MAAM,EAAE,OAAO,EAAE,+DAA+D,EAAE,CAAC;IAC9F,CAAC;CACF,CAAA;AAJY,4CAAgB;2BAAhB,gBAAgB;IAD5B,IAAA,mBAAU,GAAE;GACA,gBAAgB,CAI5B"}
