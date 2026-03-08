@@ -55,14 +55,17 @@ def serve() -> None:
     val_calc = ValuationCalculator()
 
     # ── Handler ───────────────────────────────────────────────────────────────
-    handler = AnalyticsHandler(stock_data_repo, indicator_repo, valuation_repo)
+    handler = AnalyticsHandler(
+        stock_data_repo, indicator_repo, valuation_repo, tech_calc, val_calc,
+        db_pool=db_pool,
+    )
 
     # ── gRPC server ───────────────────────────────────────────────────────────
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=settings.grpc_max_workers),
         options=[
-            ("grpc.max_send_message_length", 50 * 1024 * 1024),
-            ("grpc.max_receive_message_length", 50 * 1024 * 1024),
+            ("grpc.max_send_message_length", 10 * 1024 * 1024),
+            ("grpc.max_receive_message_length", 10 * 1024 * 1024),
         ],
     )
     analytics_pb2_grpc.add_AnalyticsServiceServicer_to_server(handler, server)

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # PostgreSQL
     db_host: str = "localhost"
-    db_port: int = 5432
+    db_port: int = 5433
     db_user: str = "stock_user"
     db_password: str = ""
     db_name: str = "stock_db"
@@ -52,7 +52,3 @@ class Settings(BaseSettings):
             "password": self.db_password,
             "dbname": self.db_name,
         }
-
-
-# Singleton settings instance used across the service
-settings = Settings()

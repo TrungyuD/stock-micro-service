@@ -1,5 +1,5 @@
 """
-technical-calculator.py — Computes RSI, SMA, EMA, MACD, and Bollinger Bands
+technical_calculator.py — Computes RSI, SMA, EMA, MACD, and Bollinger Bands
 from a list of OHLCV bar dicts using pure numpy (no external TA library required).
 
 All methods accept a list[dict] with at least a 'close' key and return a dict
@@ -47,10 +47,13 @@ def _ema(series: np.ndarray, period: int) -> np.ndarray:
 
 
 def _sma(series: np.ndarray, period: int) -> np.ndarray:
-    """Simple Moving Average — returns NaN for positions before `period`."""
+    """Simple Moving Average — O(n) via cumulative sum. Returns NaN before `period`."""
     result = np.full(len(series), np.nan)
-    for i in range(period - 1, len(series)):
-        result[i] = np.mean(series[i - period + 1 : i + 1])
+    if len(series) < period:
+        return result
+    cumsum = np.cumsum(series)
+    result[period - 1] = cumsum[period - 1] / period
+    result[period:] = (cumsum[period:] - cumsum[:-period]) / period
     return result
 
 

@@ -1,1 +1,0 @@
-"""Analytics indicators package."""

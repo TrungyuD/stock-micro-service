@@ -69,7 +69,7 @@ export class IndicatorEntity {
   @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true, name: 'bb_lower' })
   bbLower: number | null;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
   @ManyToOne(() => StockEntity, (stock) => stock.indicators, { onDelete: 'CASCADE' })

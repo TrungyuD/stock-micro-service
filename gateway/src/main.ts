@@ -1,7 +1,13 @@
+/**
+ * main.ts — NestJS bootstrap with Swagger, CORS, global validation,
+ * gRPC exception filter, and request logging interceptor.
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { GrpcExceptionFilter } from './common/filters/grpc-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,9 +16,11 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  // CORS — allow frontend dev server and configurable origins
+  // CORS — allow all origins in development
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:5300'],
+    origin: true,
+    methods: 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization,Accept',
     credentials: true,
   });
 
@@ -26,13 +34,21 @@ async function bootstrap() {
     }),
   );
 
+  // Global exception filter — maps gRPC errors to HTTP status codes
+  app.useGlobalFilters(new GrpcExceptionFilter());
+
+  // Global logging interceptor — logs method, URL, response time
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
   // Swagger / OpenAPI documentation
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Stock Trading API Gateway')
     .setDescription('REST API gateway that proxies requests to gRPC microservices')
     .setVersion('1.0')
+    .addTag('health', 'Service health checks')
     .addTag('stocks', 'Stock price and market data')
     .addTag('analytics', 'Technical indicators and valuation metrics')
+    .addTag('watchlists', 'Watchlist management')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -47,4 +63,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

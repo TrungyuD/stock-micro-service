@@ -24,11 +24,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Non-root user for security
+RUN addgroup --system --gid 1001 nestjs && \
+    adduser --system --uid 1001 nestjs
+
 # Only production deps
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+
+USER nestjs
 
 EXPOSE 3001
 

@@ -7,10 +7,10 @@ caller.  We treat 0.0 as "no filter applied" throughout this module because
 real PE/PEG/dividend values of exactly 0.0 are meaningless as filter bounds.
 """
 from generated import analytics_pb2
-from handlers.proto_mappers import _f
+from utils.numeric_helpers import safe_float_or_zero
 
 
-def passes_valuation_criteria(row: dict, c) -> bool:
+def passes_valuation_criteria(row: dict, c: analytics_pb2.ScreeningCriteria) -> bool:
     """
     Return True if the valuation row satisfies PE/PEG/dividend criteria.
 
@@ -19,9 +19,9 @@ def passes_valuation_criteria(row: dict, c) -> bool:
       - max_* == 0.0  →  no upper-bound filter (skip check)
     A stock with an actual 0.0 PE is treated as unfiltered (no valid PE).
     """
-    pe = _f(row.get("trailing_pe"))
-    peg = _f(row.get("peg_ratio"))
-    div = _f(row.get("dividend_yield"))
+    pe = safe_float_or_zero(row.get("trailing_pe"))
+    peg = safe_float_or_zero(row.get("peg_ratio"))
+    div = safe_float_or_zero(row.get("dividend_yield"))
 
     # min_pe != 0 means caller wants a lower-bound PE filter
     if c.min_pe != 0 and pe != 0 and pe < c.min_pe:
@@ -39,7 +39,7 @@ def passes_valuation_criteria(row: dict, c) -> bool:
     return True
 
 
-def passes_technical_criteria(ind_row: dict | None, c) -> bool:
+def passes_technical_criteria(ind_row: dict | None, c: analytics_pb2.ScreeningCriteria) -> bool:
     """
     Return True if the indicator row satisfies RSI / trend criteria.
     Missing indicator data is treated as a pass (don't filter out uncalculated stocks).
@@ -47,10 +47,11 @@ def passes_technical_criteria(ind_row: dict | None, c) -> bool:
     if not ind_row:
         return True  # no data → don't filter out
 
-    rsi = _f(ind_row.get("rsi_14"))
-    # rsi_oversold / rsi_overbought are boolean flags — truthy check is correct here
+    rsi = safe_float_or_zero(ind_row.get("rsi_14"))
+    # Keep only RSI < 30 stocks when oversold filter is active
     if c.rsi_oversold and rsi != 0 and rsi >= 30:
         return False
+    # Keep only RSI > 70 stocks when overbought filter is active
     if c.rsi_overbought and rsi != 0 and rsi <= 70:
         return False
 
@@ -61,9 +62,9 @@ def passes_technical_criteria(ind_row: dict | None, c) -> bool:
     return True
 
 
-def compute_match_score(val_row: dict, ind_row: dict | None, c) -> float:
+def compute_match_score(val_row: dict, ind_row: dict | None, c: analytics_pb2.ScreeningCriteria) -> float:
     """Simple 0-100 match score: invert valuation_score (lower score = better value)."""
-    val_score = _f(val_row.get("valuation_score") or 50.0)
+    val_score = safe_float_or_zero(val_row.get("valuation_score") or 50.0)
     return round(100.0 - val_score, 2)
 
 

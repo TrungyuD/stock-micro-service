@@ -1,19 +1,187 @@
 # =============================================================================
-# Docker Compose — Production Overrides
-# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Docker Compose — Production
+# All services: Postgres, Informer, Analytics, Gateway, Frontend
+# Usage: docker compose -f docker-compose.prod.yml up -d
 # =============================================================================
 
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL with TimescaleDB
+  # ---------------------------------------------------------------------------
   postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: stock_postgres
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    # No port exposure in prod — services communicate via internal network
-    ports: []
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - stock_network
 
+  # ---------------------------------------------------------------------------
+  # Redis — caching layer
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: stock_redis
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stock_network
+
+  # ---------------------------------------------------------------------------
+  # Informer gRPC service (port 50051)
+  # ---------------------------------------------------------------------------
+  informer:
+    build:
+      context: .
+      dockerfile: services/informer/Dockerfile
+    container_name: stock_informer
+    restart: always
+    environment:
+      GRPC_PORT: 50051
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - stock_network
+
+  # ---------------------------------------------------------------------------
+  # Analytics gRPC service (port 50052)
+  # ---------------------------------------------------------------------------
+  analytics:
+    build:
+      context: .
+      dockerfile: services/analytics/Dockerfile
+    container_name: stock_analytics
+    restart: always
+    environment:
+      GRPC_PORT: 50052
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      INFORMER_HOST: informer
+      INFORMER_PORT: 50051
+    depends_on:
+      postgres:
+        condition: service_healthy
+      informer:
+        condition: service_started
+    networks:
+      - stock_network
+
+  # ---------------------------------------------------------------------------
+  # NestJS API Gateway (port 3001)
+  # ---------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: stock_gateway
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      INFORMER_URL: informer:50051
+      ANALYTICS_URL: analytics:50052
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "${GATEWAY_PORT:-5301}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      informer:
+        condition: service_started
+      analytics:
+        condition: service_started
+    networks:
+      - stock_network
+
+  # ---------------------------------------------------------------------------
+  # Next.js Frontend (port 3000)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../stock-app
+      dockerfile: Dockerfile
+    container_name: stock_frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://gateway:3001/api/v1
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      gateway:
+        condition: service_started
+    networks:
+      - stock_network
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin — only available with --profile debug
+  # ---------------------------------------------------------------------------
   pgadmin:
-    # Disable pgAdmin in production — use a bastion host or VPN instead
+    image: dpage/pgadmin4:latest
+    container_name: stock_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@stock.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
     profiles:
       - debug
+    networks:
+      - stock_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  stock_network:
+    driver: bridge

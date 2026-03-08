@@ -26,10 +26,10 @@ export class WatchlistEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => WatchlistItemEntity, (item) => item.watchlist, { cascade: true })

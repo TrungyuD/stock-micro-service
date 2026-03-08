@@ -58,7 +58,7 @@ export class ValuationMetricEntity {
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'valuation_score' })
   valuationScore: number | null;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
   @ManyToOne(() => StockEntity, (stock) => stock.valuationMetrics, { onDelete: 'CASCADE' })

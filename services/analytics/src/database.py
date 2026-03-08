@@ -52,13 +52,22 @@ class DatabasePool:
             self._pool.closeall()
             logger.info("DB pool closed")
 
+    def health_check(self) -> bool:
+        """Return True if the DB is reachable, False otherwise."""
+        try:
+            self.execute("SELECT 1", fetch="one")
+            return True
+        except Exception:
+            return False
+
     @contextmanager
     def get_connection(self) -> Generator[psycopg2.extensions.connection, None, None]:
         """
         Context manager that checks out one connection from the pool.
         Commits on success, rolls back on exception, always returns connection.
         """
-        assert self._pool is not None, "DatabasePool not initialized"
+        if self._pool is None:
+            raise RuntimeError("DatabasePool not initialized — call initialize() first")
         conn = self._pool.getconn()
         try:
             yield conn

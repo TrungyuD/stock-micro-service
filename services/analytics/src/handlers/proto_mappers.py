@@ -3,19 +3,8 @@ proto_mappers.py — Converts internal dicts to proto message objects.
 All dict_to_*_proto helpers live here, keeping the main handler
 free of proto construction details.
 """
-from typing import Any
-
 from generated import analytics_pb2
-
-
-def _f(v: Any) -> float:
-    """Safe float cast with 0.0 fallback."""
-    if v is None:
-        return 0.0
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return 0.0
+from utils.numeric_helpers import safe_float_or_zero
 
 
 def dict_to_valuation_proto(symbol: str, d: dict) -> analytics_pb2.ValuationMetrics:
@@ -28,19 +17,19 @@ def dict_to_valuation_proto(symbol: str, d: dict) -> analytics_pb2.ValuationMetr
     )
     return analytics_pb2.ValuationMetrics(
         symbol=symbol,
-        trailing_pe=_f(d.get("trailing_pe")),
-        forward_pe=_f(d.get("forward_pe")),
-        current_eps=_f(d.get("current_eps")),
-        price_to_book=_f(d.get("price_to_book")),
-        book_value_per_share=_f(d.get("book_value_per_share")),
-        peg_ratio=_f(d.get("peg_ratio")),
-        earnings_growth_rate=_f(d.get("earnings_growth_rate")),
-        dividend_yield=_f(d.get("dividend_yield")),
-        payout_ratio=_f(d.get("payout_ratio")),
-        price_to_sales=_f(d.get("price_to_sales")),
-        ev_to_ebitda=_f(d.get("ev_to_ebitda")),
+        trailing_pe=safe_float_or_zero(d.get("trailing_pe")),
+        forward_pe=safe_float_or_zero(d.get("forward_pe")),
+        current_eps=safe_float_or_zero(d.get("current_eps")),
+        price_to_book=safe_float_or_zero(d.get("price_to_book")),
+        book_value_per_share=safe_float_or_zero(d.get("book_value_per_share")),
+        peg_ratio=safe_float_or_zero(d.get("peg_ratio")),
+        earnings_growth_rate=safe_float_or_zero(d.get("earnings_growth_rate")),
+        dividend_yield=safe_float_or_zero(d.get("dividend_yield")),
+        payout_ratio=safe_float_or_zero(d.get("payout_ratio")),
+        price_to_sales=safe_float_or_zero(d.get("price_to_sales")),
+        ev_to_ebitda=safe_float_or_zero(d.get("ev_to_ebitda")),
         valuation_signal=str(d.get("valuation_signal") or ""),
-        valuation_score=_f(d.get("valuation_score")),
+        valuation_score=safe_float_or_zero(d.get("valuation_score")),
         calculated_at=ts,
     )
 
@@ -57,10 +46,10 @@ def dict_to_technicals_proto(
     if signals is None:
         signals = d.get("_signals", {})
 
-    rsi_val = _f(d.get("rsi_14"))
-    bb_upper = _f(d.get("bb_upper"))
-    bb_middle = _f(d.get("bb_middle"))
-    bb_lower = _f(d.get("bb_lower"))
+    rsi_val = safe_float_or_zero(d.get("rsi_14"))
+    bb_upper = safe_float_or_zero(d.get("bb_upper"))
+    bb_middle = safe_float_or_zero(d.get("bb_middle"))
+    bb_lower = safe_float_or_zero(d.get("bb_lower"))
 
     band_width = bb_upper - bb_lower if bb_upper and bb_lower else 0.0
     percent_b = (
@@ -84,17 +73,17 @@ def dict_to_technicals_proto(
             signal=signals.get("rsi_signal", "Neutral"),
         ),
         moving_averages=analytics_pb2.MovingAverages(
-            sma_20=_f(d.get("sma_20")),
-            sma_50=_f(d.get("sma_50")),
-            sma_200=_f(d.get("sma_200")),
-            ema_20=_f(d.get("ema_20")),
-            ema_50=_f(d.get("ema_50")),
+            sma_20=safe_float_or_zero(d.get("sma_20")),
+            sma_50=safe_float_or_zero(d.get("sma_50")),
+            sma_200=safe_float_or_zero(d.get("sma_200")),
+            ema_20=safe_float_or_zero(d.get("ema_20")),
+            ema_50=safe_float_or_zero(d.get("ema_50")),
             trend_signal=signals.get("trend_signal", "Neutral"),
         ),
         macd=analytics_pb2.MACDIndicator(
-            macd_line=_f(d.get("macd_line")),
-            signal_line=_f(d.get("macd_signal")),
-            histogram=_f(d.get("macd_histogram")),
+            macd_line=safe_float_or_zero(d.get("macd_line")),
+            signal_line=safe_float_or_zero(d.get("macd_signal")),
+            histogram=safe_float_or_zero(d.get("macd_histogram")),
             signal=signals.get("macd_signal", "Neutral"),
         ),
         bollinger_bands=analytics_pb2.BollingerBands(

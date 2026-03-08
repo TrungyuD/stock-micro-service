@@ -6,6 +6,12 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+from calculators.technical_calculator import TechnicalCalculator
+from calculators.valuation_calculator import ValuationCalculator
+from repositories.indicator_repository import IndicatorRepository
+from repositories.stock_data_repository import StockDataRepository
+from repositories.valuation_repository import ValuationRepository
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +34,14 @@ class ComputeService:
     Keeps AnalyticsHandler slim — handler methods delegate here.
     """
 
-    def __init__(self, stock_repo, indicator_repo, valuation_repo, tech_calc, val_calc):
+    def __init__(
+        self,
+        stock_repo: StockDataRepository,
+        indicator_repo: IndicatorRepository,
+        valuation_repo: ValuationRepository,
+        tech_calc: TechnicalCalculator,
+        val_calc: ValuationCalculator,
+    ) -> None:
         self._stock_repo = stock_repo
         self._ind_repo = indicator_repo
         self._val_repo = valuation_repo

@@ -41,7 +41,7 @@ export class OhlcvEntity {
   @Column({ type: 'bigint' })
   volume: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true })
+  @Column({ type: 'decimal', precision: 12, scale: 4, nullable: true, name: 'adjusted_close' })
   adjustedClose: number | null;
 
   // Relation — not loaded by default (use QueryBuilder when needed)

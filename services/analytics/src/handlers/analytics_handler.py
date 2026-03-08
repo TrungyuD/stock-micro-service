@@ -5,6 +5,7 @@ screening_helpers (ScreenStocks filters), recommendation_helpers (StockAnalysis)
 """
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 import grpc
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 _VERSION = "1.0.0"
 _START_TIME = datetime.now(timezone.utc)
 _BATCH_LIMIT = 50
+_BATCH_WORKERS = 8
 
 
 class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
@@ -40,15 +42,20 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
         stock_data_repo: StockDataRepository,
         indicator_repo: IndicatorRepository,
         valuation_repo: ValuationRepository,
+        tech_calc: TechnicalCalculator,
+        val_calc: ValuationCalculator,
+        db_pool=None,
     ) -> None:
         self._stock_repo = stock_data_repo
         self._ind_repo = indicator_repo
         self._val_repo = valuation_repo
-        tech_calc = TechnicalCalculator()
-        val_calc = ValuationCalculator()
+        self._db_pool = db_pool
         self._svc = ComputeService(
             stock_data_repo, indicator_repo, valuation_repo, tech_calc, val_calc
         )
+        # C3: Lock to prevent concurrent TriggerCalculation runs
+        self._trigger_lock = threading.Lock()
+        self._trigger_running = False
 
     # ─── GetValuationMetrics ──────────────────────────────────────────────────
 
@@ -137,16 +144,23 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
             return analytics_pb2.BatchAnalysisResponse()
         symbols = symbols[:_BATCH_LIMIT]
         analyses, failed = [], []
-        for sym in symbols:
-            try:
-                analysis = self._build_stock_analysis(sym, include_rationale=False)
-                if analysis:
-                    analyses.append(analysis)
-                else:
+        # C2: Use ThreadPoolExecutor for concurrent batch processing
+        with ThreadPoolExecutor(max_workers=_BATCH_WORKERS) as executor:
+            future_to_sym = {
+                executor.submit(self._build_stock_analysis, sym, False): sym
+                for sym in symbols
+            }
+            for future in as_completed(future_to_sym):
+                sym = future_to_sym[future]
+                try:
+                    analysis = future.result()
+                    if analysis:
+                        analyses.append(analysis)
+                    else:
+                        failed.append(sym)
+                except Exception as exc:
+                    logger.warning("BatchAnalysis: failed for %s: %s", sym, exc)
                     failed.append(sym)
-            except Exception as exc:
-                logger.warning("BatchAnalysis: failed for %s: %s", sym, exc)
-                failed.append(sym)
         return analytics_pb2.BatchAnalysisResponse(
             analyses=analyses, failed_symbols=failed
         )
@@ -155,7 +169,7 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
 
     def ScreenStocks(self, request, context):
         criteria = request.criteria
-        limit = request.limit or 20
+        limit = min(request.limit or 20, 200)  # cap at 200 to prevent abuse
         sort_by = request.sort_by or "valuation_score"
         try:
             matched = []
@@ -203,9 +217,17 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
                 context.set_code(grpc.StatusCode.INTERNAL)
                 context.set_details(str(exc))
                 return analytics_pb2.TriggerCalculationResponse(accepted=False)
+        # C3: Prevent concurrent trigger runs with a lock
+        with self._trigger_lock:
+            if self._trigger_running:
+                return analytics_pb2.TriggerCalculationResponse(
+                    accepted=False,
+                    message="Calculation already in progress — try again later",
+                )
+            self._trigger_running = True
         logger.info("TriggerCalculation: type=%s symbols=%d", calc_type, len(symbols))
         threading.Thread(
-            target=self._svc.run_calculation_job,
+            target=self._guarded_calculation_job,
             args=(symbols, calc_type),
             daemon=True,
             name="calc-trigger",
@@ -215,13 +237,21 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
             message=f"Calculating {calc_type} for {len(symbols)} symbol(s)",
         )
 
+    def _guarded_calculation_job(self, symbols: list[str], calc_type: str) -> None:
+        """Run calculation job and release the trigger lock when done."""
+        try:
+            self._svc.run_calculation_job(symbols, calc_type)
+        finally:
+            with self._trigger_lock:
+                self._trigger_running = False
+
     # ─── HealthCheck ──────────────────────────────────────────────────────────
 
     def HealthCheck(self, request, context):
         db_ok = False
         try:
-            self._stock_repo._db.execute("SELECT 1", fetch="one")
-            db_ok = True
+            if self._db_pool:
+                db_ok = self._db_pool.health_check()
         except Exception as exc:
             logger.warning("HealthCheck DB probe failed: %s", exc)
         status = "SERVING" if db_ok else "NOT_SERVING"

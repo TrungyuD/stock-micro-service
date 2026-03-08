@@ -1,5 +1,5 @@
 """
-valuation-calculator.py — Computes PE, PEG, P/B, P/S, EV/EBITDA, dividend yield,
+valuation_calculator.py — Computes PE, PEG, P/B, P/S, EV/EBITDA, dividend yield,
 and payout ratio from financial report data and the current market price.
 
 All methods are stateless and safe to call from multiple gRPC worker threads.
@@ -8,6 +8,8 @@ division-by-zero / nonsensical results.
 """
 import logging
 from typing import Any
+
+from utils.numeric_helpers import safe_div, safe_float, safe_int
 
 logger = logging.getLogger(__name__)
 
@@ -47,15 +49,15 @@ class ValuationCalculator:
         result: dict[str, Any] = {}
 
         # ── Helpers ───────────────────────────────────────────────────────────
-        eps = _f(r.get("eps"))
-        book_value_per_share = _f(r.get("book_value_per_share"))
-        shares = _i(r.get("shares_outstanding"))
+        eps = safe_float(r.get("eps"))
+        book_value_per_share = safe_float(r.get("book_value_per_share"))
+        shares = safe_int(r.get("shares_outstanding"))
 
         result["current_eps"] = eps
         result["book_value_per_share"] = book_value_per_share
 
         # ── Trailing P/E ─────────────────────────────────────────────────────
-        result["trailing_pe"] = _safe_div(current_price, eps)
+        result["trailing_pe"] = safe_div(current_price, eps)
 
         # ── Forward P/E (approximated: use trailing if no forward EPS available) ──
         # forward_eps is not stored separately; reuse trailing EPS as best estimate
@@ -70,23 +72,23 @@ class ValuationCalculator:
             result["peg_ratio"] = None
 
         # ── Price-to-Book = price / book_value_per_share ──────────────────────
-        result["price_to_book"] = _safe_div(current_price, book_value_per_share)
+        result["price_to_book"] = safe_div(current_price, book_value_per_share)
 
         # ── Price-to-Sales = market_cap / revenue ─────────────────────────────
-        revenue = _f(r.get("revenue"))
+        revenue = safe_float(r.get("revenue"))
         if revenue and revenue > 0 and shares and shares > 0:
             revenue_per_share = revenue / shares
-            result["price_to_sales"] = _safe_div(current_price, revenue_per_share)
+            result["price_to_sales"] = safe_div(current_price, revenue_per_share)
         else:
             result["price_to_sales"] = None
 
         # ── EV/EBITDA ─────────────────────────────────────────────────────────
         # Approximate EBITDA ≈ operating_income (capex not reliably available)
         # EV ≈ market_cap (simplified; no debt/cash data in schema)
-        operating_income = _f(r.get("operating_income"))
+        operating_income = safe_float(r.get("operating_income"))
         if operating_income and operating_income > 0 and shares and shares > 0:
             market_cap = current_price * shares
-            result["ev_to_ebitda"] = _safe_div(market_cap, operating_income)
+            result["ev_to_ebitda"] = safe_div(market_cap, operating_income)
         else:
             result["ev_to_ebitda"] = None
 
@@ -97,7 +99,7 @@ class ValuationCalculator:
         result["dividend_yield"] = None
         result["payout_ratio"] = None
 
-        net_income = _f(r.get("net_income"))
+        net_income = safe_float(r.get("net_income"))
         if net_income and eps and eps > 0 and shares and shares > 0:
             # payout_ratio: fraction of EPS distributed as dividend
             # Approximate: if net_income / shares ≈ eps, payout_ratio = dividends / net_income
@@ -123,8 +125,8 @@ class ValuationCalculator:
 
         # Sort oldest-first
         sorted_rows = sorted(eps_history, key=lambda r: r["report_date"])
-        oldest_eps = _f(sorted_rows[0].get("eps"))
-        newest_eps = _f(sorted_rows[-1].get("eps"))
+        oldest_eps = safe_float(sorted_rows[0].get("eps"))
+        newest_eps = safe_float(sorted_rows[-1].get("eps"))
 
         if oldest_eps is None or newest_eps is None:
             return None
@@ -144,11 +146,13 @@ class ValuationCalculator:
         Derive a valuation signal ('Undervalued', 'Fair Value', 'Overvalued')
         and a 0-100 score (lower = more undervalued).
 
-        Scoring weights:
-          - P/E:   40 pts  (lower is better; benchmark 15)
-          - PEG:   30 pts  (< 1 ideal)
-          - P/B:   20 pts  (< 1 ideal)
-          - P/S:   10 pts  (< 2 ideal)
+        Scoring: equal-weight running average of available factors.
+        Each factor is normalized to 0-100 scale. Only non-None factors
+        contribute; missing ratios are excluded from the average.
+          - P/E:   normalize vs benchmark 30 (PE of 30 → 100 pts)
+          - PEG:   normalize vs benchmark 2  (PEG of 2  → 100 pts)
+          - P/B:   normalize vs benchmark 5  (P/B of 5  → 100 pts)
+          - P/S:   normalize vs benchmark 10 (P/S of 10 → 100 pts)
         """
         score = 50.0  # neutral default
         factors = 0
@@ -189,34 +193,3 @@ class ValuationCalculator:
             signal = "Fair Value"
 
         return signal, score
-
-
-# ─── Arithmetic guards ────────────────────────────────────────────────────────
-
-def _f(v: Any) -> float | None:
-    """Cast to float; return None if value is None or non-numeric."""
-    if v is None:
-        return None
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def _i(v: Any) -> int | None:
-    """Cast to int; return None if value is None or non-numeric."""
-    if v is None:
-        return None
-    try:
-        return int(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def _safe_div(numerator: float | None, denominator: float | None) -> float | None:
-    """Return numerator / denominator rounded to 4 dp, or None on zero/None."""
-    if numerator is None or denominator is None:
-        return None
-    if denominator == 0:
-        return None
-    return round(numerator / denominator, 4)

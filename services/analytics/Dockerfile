@@ -1,34 +1,55 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Analytics gRPC service
+# =============================================================================
+# Analytics gRPC service — multi-stage build
+# Stage 1: builder  — install deps + generate proto stubs
+# Stage 2: runner   — slim production image
 # Build context: repo root  →  docker build -f services/analytics/Dockerfile .
-# ─────────────────────────────────────────────────────────────────────────────
-FROM python:3.11-slim
+# =============================================================================
 
-WORKDIR /app
+FROM python:3.11-slim AS builder
 
-# Install Python dependencies first (Docker layer caching)
+WORKDIR /build
+
+# Install dependencies into a virtual env for clean copy
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY services/analytics/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy proto definitions and generate stubs at build time
+# Generate proto stubs
 COPY protos/ ./protos/
-RUN mkdir -p ./src/generated/common && \
+RUN mkdir -p ./generated/common && \
     python -m grpc_tools.protoc \
         -I./protos \
-        --python_out=./src/generated \
-        --grpc_python_out=./src/generated \
+        --python_out=./generated \
+        --grpc_python_out=./generated \
         ./protos/analytics.proto && \
-    # Create __init__.py files so generated stubs are importable as packages
-    touch ./src/generated/__init__.py && \
-    touch ./src/generated/common/__init__.py
+    touch ./generated/__init__.py && \
+    touch ./generated/common/__init__.py
 
-# Copy service source (after proto gen so stub layer is cached on src changes)
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+# Copy only the virtual env (no pip, no build tools)
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Copy generated proto stubs
+COPY --from=builder /build/generated/ ./src/generated/
+
+# Copy service source
 COPY services/analytics/src/ ./src/
 
-# PYTHONPATH=./src so all imports work without package install
-ENV PYTHONPATH=/app/src
+# Non-root user for security
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser
+USER appuser
 
-# Expose gRPC port (default 50052; overridable via GRPC_PORT env var)
 EXPOSE 50052
 
 CMD ["python", "src/server.py"]
