@@ -2,13 +2,15 @@
  * stocks.controller.ts — REST endpoints for stock data.
  * Proxies to Informer gRPC service via StocksService.
  */
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { StocksService } from './stocks.service';
 import { ListStocksQueryDto } from './dto/list-stocks-query.dto';
 import { GetPriceHistoryQueryDto } from './dto/get-price-history-query.dto';
 import { GetFinancialReportsQueryDto } from './dto/get-financial-reports-query.dto';
 import { BatchGetStocksDto } from './dto/batch-get-stocks.dto';
+import { CreateStockDto } from './dto/create-stock.dto';
+import { UpdateStockDto } from './dto/update-stock.dto';
 
 @ApiTags('stocks')
 @Controller('stocks')
@@ -27,6 +29,29 @@ export class StocksController {
   @ApiResponse({ status: 200, description: 'Batch stock results' })
   batchGetStocks(@Body() dto: BatchGetStocksDto) {
     return this.stocksService.batchGetStocks(dto.symbols);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new stock' })
+  @ApiResponse({ status: 201, description: 'Stock created' })
+  createStock(@Body() dto: CreateStockDto) {
+    return this.stocksService.createStock(dto);
+  }
+
+  @Put(':symbol')
+  @ApiOperation({ summary: 'Update a stock by symbol' })
+  @ApiParam({ name: 'symbol', example: 'AAPL' })
+  @ApiResponse({ status: 200, description: 'Stock updated' })
+  updateStock(@Param('symbol') symbol: string, @Body() dto: UpdateStockDto) {
+    return this.stocksService.updateStock(symbol, dto);
+  }
+
+  @Delete(':symbol')
+  @ApiOperation({ summary: 'Soft-delete a stock by symbol' })
+  @ApiParam({ name: 'symbol', example: 'AAPL' })
+  @ApiResponse({ status: 200, description: 'Stock deactivated' })
+  deleteStock(@Param('symbol') symbol: string) {
+    return this.stocksService.deleteStock(symbol);
   }
 
   @Get(':symbol')

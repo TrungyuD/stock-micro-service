@@ -20,4 +20,9 @@ export class ListStocksQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by country code (e.g., "US", "VN")' })
+  @IsOptional()
+  @IsString()
+  country?: string;
 }

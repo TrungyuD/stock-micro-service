@@ -21,6 +21,11 @@ service InformerService {
   rpc GetFinancialReport (GetFinancialReportRequest) returns (GetFinancialReportResponse);
   rpc GetFinancialReports (GetFinancialReportsRequest) returns (GetFinancialReportsResponse);
 
+  // Stock admin CRUD
+  rpc CreateStock (CreateStockRequest) returns (CreateStockResponse);
+  rpc UpdateStock (UpdateStockRequest) returns (UpdateStockResponse);
+  rpc DeleteStock (DeleteStockRequest) returns (DeleteStockResponse);
+
   // Data collection triggers (admin)
   rpc TriggerDataCollection (TriggerDataCollectionRequest) returns (TriggerDataCollectionResponse);
 
@@ -45,6 +50,7 @@ message ListStocksRequest {
   string sector = 2;               // Filter by sector (optional)
   string search = 3;               // Search by symbol or name (optional)
   stock.common.PaginationRequest pagination = 4;
+  string country = 5;              // Filter by country code: "US", "VN" (optional)
 }
 
 message ListStocksResponse {
@@ -161,4 +167,34 @@ message HealthCheckResponse {
   string status = 1;               // "SERVING", "NOT_SERVING"
   string version = 2;
   string uptime = 3;
+}
+
+// ============================================
+// STOCK ADMIN CRUD
+// ============================================
+
+message CreateStockRequest {
+  stock.common.Stock stock = 1;
+}
+
+message CreateStockResponse {
+  stock.common.Stock stock = 1;
+}
+
+message UpdateStockRequest {
+  string symbol = 1;               // Target stock symbol
+  stock.common.Stock stock = 2;    // Updated fields
+}
+
+message UpdateStockResponse {
+  stock.common.Stock stock = 1;
+}
+
+message DeleteStockRequest {
+  string symbol = 1;
+}
+
+message DeleteStockResponse {
+  bool success = 1;
+  string message = 2;
 }

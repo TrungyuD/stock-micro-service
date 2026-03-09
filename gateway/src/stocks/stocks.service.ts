@@ -8,6 +8,8 @@ import { lastValueFrom, Observable } from 'rxjs';
 import { ListStocksQueryDto } from './dto/list-stocks-query.dto';
 import { GetPriceHistoryQueryDto } from './dto/get-price-history-query.dto';
 import { GetFinancialReportsQueryDto } from './dto/get-financial-reports-query.dto';
+import { CreateStockDto } from './dto/create-stock.dto';
+import { UpdateStockDto } from './dto/update-stock.dto';
 
 /** gRPC service interface matching informer.proto */
 interface InformerGrpcService {
@@ -16,6 +18,9 @@ interface InformerGrpcService {
   BatchGetStocks(req: { symbols: string[] }): Observable<any>;
   GetPriceHistory(req: any): Observable<any>;
   GetFinancialReports(req: any): Observable<any>;
+  CreateStock(req: { stock: any }): Observable<any>;
+  UpdateStock(req: { symbol: string; stock: any }): Observable<any>;
+  DeleteStock(req: { symbol: string }): Observable<any>;
   HealthCheck(req: Record<string, never>): Observable<any>;
 }
 
@@ -45,6 +50,7 @@ export class StocksService implements OnModuleInit {
         exchange: query.exchange ?? '',
         sector: query.sector ?? '',
         search: query.search ?? '',
+        country: query.country ?? '',
         pagination: { page: query.page, page_size: pageSize },
       }),
     );
@@ -82,5 +88,49 @@ export class StocksService implements OnModuleInit {
   /** Check Informer service health */
   async healthCheck() {
     return lastValueFrom(this.informerService.HealthCheck({}));
+  }
+
+  /** Create a new stock */
+  async createStock(dto: CreateStockDto) {
+    return lastValueFrom(
+      this.informerService.CreateStock({
+        stock: {
+          symbol: dto.symbol?.toUpperCase(),
+          name: dto.name,
+          sector: dto.sector ?? '',
+          industry: dto.industry ?? '',
+          exchange: dto.exchange ?? '',
+          country: dto.country ?? 'US',
+          currency: dto.currency ?? 'USD',
+          is_active: dto.isActive ?? true,
+        },
+      }),
+    );
+  }
+
+  /** Update an existing stock */
+  async updateStock(symbol: string, dto: UpdateStockDto) {
+    return lastValueFrom(
+      this.informerService.UpdateStock({
+        symbol: symbol.toUpperCase(),
+        stock: {
+          symbol: symbol.toUpperCase(),
+          name: dto.name ?? '',
+          sector: dto.sector ?? '',
+          industry: dto.industry ?? '',
+          exchange: dto.exchange ?? '',
+          country: dto.country ?? '',
+          currency: dto.currency ?? '',
+          is_active: dto.isActive ?? true,
+        },
+      }),
+    );
+  }
+
+  /** Soft-delete a stock */
+  async deleteStock(symbol: string) {
+    return lastValueFrom(
+      this.informerService.DeleteStock({ symbol: symbol.toUpperCase() }),
+    );
   }
 }

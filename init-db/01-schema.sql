@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS stocks (
 CREATE INDEX idx_stocks_symbol ON stocks (symbol);
 CREATE INDEX idx_stocks_sector ON stocks (sector);
 CREATE INDEX idx_stocks_exchange ON stocks (exchange);
+CREATE INDEX idx_stocks_country ON stocks (country);
 
 -- ============================================
 -- OHLCV TABLE (time-series hypertable)

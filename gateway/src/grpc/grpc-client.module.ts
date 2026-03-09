@@ -34,6 +34,7 @@ import { join } from 'path';
             loader: {
               includeDirs: [join(__dirname, '..', '..', '..', 'protos')],
               keepCase: true,
+              longs: Number,
             },
           },
         }),
@@ -51,6 +52,7 @@ import { join } from 'path';
             loader: {
               includeDirs: [join(__dirname, '..', '..', '..', 'protos')],
               keepCase: true,
+              longs: Number,
             },
           },
         }),

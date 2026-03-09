@@ -68,6 +68,21 @@ class InformerServiceStub(object):
                 request_serializer=informer__pb2.GetFinancialReportsRequest.SerializeToString,
                 response_deserializer=informer__pb2.GetFinancialReportsResponse.FromString,
                 _registered_method=True)
+        self.CreateStock = channel.unary_unary(
+                '/stock.informer.v1.InformerService/CreateStock',
+                request_serializer=informer__pb2.CreateStockRequest.SerializeToString,
+                response_deserializer=informer__pb2.CreateStockResponse.FromString,
+                _registered_method=True)
+        self.UpdateStock = channel.unary_unary(
+                '/stock.informer.v1.InformerService/UpdateStock',
+                request_serializer=informer__pb2.UpdateStockRequest.SerializeToString,
+                response_deserializer=informer__pb2.UpdateStockResponse.FromString,
+                _registered_method=True)
+        self.DeleteStock = channel.unary_unary(
+                '/stock.informer.v1.InformerService/DeleteStock',
+                request_serializer=informer__pb2.DeleteStockRequest.SerializeToString,
+                response_deserializer=informer__pb2.DeleteStockResponse.FromString,
+                _registered_method=True)
         self.TriggerDataCollection = channel.unary_unary(
                 '/stock.informer.v1.InformerService/TriggerDataCollection',
                 request_serializer=informer__pb2.TriggerDataCollectionRequest.SerializeToString,
@@ -126,6 +141,25 @@ class InformerServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CreateStock(self, request, context):
+        """Stock admin CRUD
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateStock(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteStock(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def TriggerDataCollection(self, request, context):
         """Data collection triggers (admin)
         """
@@ -172,6 +206,21 @@ def add_InformerServiceServicer_to_server(servicer, server):
                     servicer.GetFinancialReports,
                     request_deserializer=informer__pb2.GetFinancialReportsRequest.FromString,
                     response_serializer=informer__pb2.GetFinancialReportsResponse.SerializeToString,
+            ),
+            'CreateStock': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateStock,
+                    request_deserializer=informer__pb2.CreateStockRequest.FromString,
+                    response_serializer=informer__pb2.CreateStockResponse.SerializeToString,
+            ),
+            'UpdateStock': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateStock,
+                    request_deserializer=informer__pb2.UpdateStockRequest.FromString,
+                    response_serializer=informer__pb2.UpdateStockResponse.SerializeToString,
+            ),
+            'DeleteStock': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteStock,
+                    request_deserializer=informer__pb2.DeleteStockRequest.FromString,
+                    response_serializer=informer__pb2.DeleteStockResponse.SerializeToString,
             ),
             'TriggerDataCollection': grpc.unary_unary_rpc_method_handler(
                     servicer.TriggerDataCollection,
@@ -350,6 +399,87 @@ class InformerService(object):
             '/stock.informer.v1.InformerService/GetFinancialReports',
             informer__pb2.GetFinancialReportsRequest.SerializeToString,
             informer__pb2.GetFinancialReportsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateStock(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/stock.informer.v1.InformerService/CreateStock',
+            informer__pb2.CreateStockRequest.SerializeToString,
+            informer__pb2.CreateStockResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateStock(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/stock.informer.v1.InformerService/UpdateStock',
+            informer__pb2.UpdateStockRequest.SerializeToString,
+            informer__pb2.UpdateStockResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteStock(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/stock.informer.v1.InformerService/DeleteStock',
+            informer__pb2.DeleteStockRequest.SerializeToString,
+            informer__pb2.DeleteStockResponse.FromString,
             options,
             channel_credentials,
             insecure,

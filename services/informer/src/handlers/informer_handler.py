@@ -11,6 +11,7 @@ import grpc
 
 from generated import informer_pb2, informer_pb2_grpc
 from generated.common import types_pb2
+from handlers import stock_admin_handler as _admin_mod
 from utils.validators import validate_symbol
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
         self._stock_repo = stock_repo
         self._ohlcv_repo = ohlcv_repo
         self._financial_repo = financial_repo
+        self._admin = _admin_mod.StockAdminHandler(stock_repo)
 
     # ─── GetStockInfo ─────────────────────────────────────────────────────────
 
@@ -67,6 +69,7 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
                 query=request.search,
                 exchange=request.exchange,
                 sector=request.sector,
+                country=request.country,
                 page=page,
                 page_size=page_size,
             )
@@ -316,6 +319,17 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
             version=_VERSION,
             uptime=uptime_str,
         )
+
+    # ─── Stock Admin CRUD (delegated) ──────────────────────────────────────────
+
+    def CreateStock(self, request, context):
+        return self._admin.CreateStock(request, context)
+
+    def UpdateStock(self, request, context):
+        return self._admin.UpdateStock(request, context)
+
+    def DeleteStock(self, request, context):
+        return self._admin.DeleteStock(request, context)
 
 
 # ─── proto mapping helpers ────────────────────────────────────────────────────

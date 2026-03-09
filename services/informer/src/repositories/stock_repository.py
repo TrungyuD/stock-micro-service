@@ -50,6 +50,7 @@ class StockRepository:
         query: str = "",
         exchange: str = "",
         sector: str = "",
+        country: str = "",
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
@@ -72,6 +73,9 @@ class StockRepository:
         if sector:
             conditions.append("sector = %s")
             params.append(sector)
+        if country:
+            conditions.append("country = %s")
+            params.append(country)
 
         where = " AND ".join(conditions)
         offset = (page - 1) * page_size
@@ -149,3 +153,16 @@ class StockRepository:
         stock_id = row["id"]
         logger.debug("Upserted stock %s → id=%s", stock_data.get("symbol"), stock_id)
         return stock_id
+
+    def soft_delete(self, symbol: str) -> bool:
+        """Set is_active=FALSE for a stock. Returns True if row existed."""
+        row = self._db.execute(
+            """
+            UPDATE stocks SET is_active = FALSE, updated_at = NOW()
+             WHERE symbol = %s
+            RETURNING id
+            """,
+            (symbol.upper(),),
+            fetch="one",
+        )
+        return row is not None
