@@ -1,7 +1,7 @@
 grpcio==1.68.0
 grpcio-tools==1.68.0
 grpcio-health-checking==1.68.0
-yfinance==0.2.48
+yfinance>=1.2.0
 pandas==2.2.3
 psycopg2-binary==2.9.10
 python-dotenv==1.0.1

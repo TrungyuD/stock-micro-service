@@ -3,10 +3,24 @@ valuation-repository.py — Read/write access to the `valuation_metrics` table.
 Stores pre-computed fundamental valuation ratios per stock.
 """
 import logging
+from typing import Any
+
+import numpy as np
 
 from database import DatabasePool
 
 logger = logging.getLogger(__name__)
+
+
+def _to_native(v: Any) -> Any:
+    """Convert numpy scalars to native Python types for psycopg2 compatibility."""
+    if isinstance(v, (np.integer,)):
+        return int(v)
+    if isinstance(v, (np.floating,)):
+        return float(v)
+    if isinstance(v, np.ndarray):
+        return v.tolist()
+    return v
 
 
 class ValuationRepository:
@@ -76,16 +90,16 @@ class ValuationRepository:
             (
                 stock_id,
                 data["calculated_at"],
-                data.get("trailing_pe"),
-                data.get("forward_pe"),
-                data.get("peg_ratio"),
-                data.get("price_to_book"),
-                data.get("price_to_sales"),
-                data.get("ev_to_ebitda"),
-                data.get("dividend_yield"),
-                data.get("payout_ratio"),
+                _to_native(data.get("trailing_pe")),
+                _to_native(data.get("forward_pe")),
+                _to_native(data.get("peg_ratio")),
+                _to_native(data.get("price_to_book")),
+                _to_native(data.get("price_to_sales")),
+                _to_native(data.get("ev_to_ebitda")),
+                _to_native(data.get("dividend_yield")),
+                _to_native(data.get("payout_ratio")),
                 data.get("valuation_signal"),
-                data.get("valuation_score"),
+                _to_native(data.get("valuation_score")),
             ),
         )
         logger.debug("Upserted valuation_metrics for stock_id=%s at %s", stock_id, data["calculated_at"])
