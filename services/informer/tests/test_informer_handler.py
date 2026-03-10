@@ -67,7 +67,7 @@ class TestInformerHandlerGetStockInfo:
     def test_invalid_symbol(self, mock_grpc_context):
         handler = self._make_handler()
         request = MagicMock()
-        request.symbol = "invalid123"
+        request.symbol = "!!!"
         handler.GetStockInfo(request, mock_grpc_context)
 
         mock_grpc_context.set_code.assert_called_with(grpc.StatusCode.INVALID_ARGUMENT)

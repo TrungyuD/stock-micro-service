@@ -22,8 +22,10 @@ class TestValidateSymbol:
     def test_invalid_too_long(self):
         assert validate_symbol("A" * 11) is False
 
-    def test_invalid_numbers(self):
-        assert validate_symbol("AAPL1") is False
+    def test_valid_alphanumeric(self):
+        """Alphanumeric symbols are valid (VN30, ACB3, AAPL1)."""
+        assert validate_symbol("AAPL1") is True
+        assert validate_symbol("VN30") is True
 
     def test_invalid_type(self):
         assert validate_symbol(123) is False
