@@ -6,19 +6,20 @@ import re
 from datetime import date, datetime
 from typing import Union
 
-# Allows 1-10 uppercase letters or dots — covers BRK.B, BF.B, etc.
-_SYMBOL_RE = re.compile(r'^[A-Z.]{1,10}$')
+# Allows 1-10 uppercase letters, digits, or dots — covers BRK.B, VN30, ACB3, etc.
+_SYMBOL_RE = re.compile(r'^[A-Z0-9.]{1,10}$')
 
 DateLike = Union[str, date, datetime]
 
 
 def validate_symbol(symbol: str) -> bool:
     """
-    Return True if `symbol` is a valid ticker (1-10 uppercase letters/dots).
+    Return True if `symbol` is a valid ticker (1-10 uppercase letters/digits/dots).
 
     Examples:
         validate_symbol("AAPL")   → True
         validate_symbol("BRK.B")  → True
+        validate_symbol("VN30")   → True
         validate_symbol("aapl")   → False
         validate_symbol("")       → False
     """
