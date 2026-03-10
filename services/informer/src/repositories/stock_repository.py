@@ -76,7 +76,7 @@ class StockRepository:
         Returns:
             (rows, total_count) tuple for pagination.
         """
-        conditions = ["1=1"]
+        conditions = ["is_active = TRUE"]
         params: list = []
 
         if query:

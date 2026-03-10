@@ -66,7 +66,8 @@ export class StocksService implements OnModuleInit {
 
   /** Batch-get multiple stocks by symbols (max 50) */
   async batchGetStocks(symbols: string[]) {
-    return this.call(this.informerService.BatchGetStocks({ symbols }));
+    const normalized = symbols.map((s) => s.trim().toUpperCase());
+    return this.call(this.informerService.BatchGetStocks({ symbols: normalized }));
   }
 
   /** Get OHLCV price history for a symbol */
