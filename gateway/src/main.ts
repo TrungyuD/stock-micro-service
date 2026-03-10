@@ -5,12 +5,16 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GrpcExceptionFilter } from './common/filters/grpc-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie parser — needed for httpOnly refresh token cookies
+  app.use(cookieParser());
 
   // Global API prefix and URI versioning: /api/v1/...
   app.setGlobalPrefix('api');
@@ -45,6 +49,8 @@ async function bootstrap() {
     .setTitle('Stock Trading API Gateway')
     .setDescription('REST API gateway that proxies requests to gRPC microservices')
     .setVersion('1.0')
+    .addBearerAuth()
+    .addTag('auth', 'Authentication endpoints')
     .addTag('health', 'Service health checks')
     .addTag('stocks', 'Stock price and market data')
     .addTag('analytics', 'Technical indicators and valuation metrics')

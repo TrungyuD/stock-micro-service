@@ -54,15 +54,29 @@ export class WatchlistsService {
     return watchlist;
   }
 
+  /** Lightweight ownership check — no relation loading */
+  private async verifyOwnership(id: number, userId: string): Promise<void> {
+    const row = await this.watchlistRepo.findOne({
+      where: { id },
+      select: ['id', 'userId'],
+    });
+    if (!row) {
+      throw new NotFoundException(`Watchlist #${id} not found`);
+    }
+    if (row.userId !== userId) {
+      throw new ForbiddenException('Not authorized to access this watchlist');
+    }
+  }
+
   /** Delete a watchlist (cascade deletes items) — verifies ownership */
   async remove(id: number, userId: string): Promise<void> {
-    const watchlist = await this.findOne(id, userId);
-    await this.watchlistRepo.delete(watchlist.id);
+    await this.verifyOwnership(id, userId);
+    await this.watchlistRepo.delete(id);
   }
 
   /** Add a stock to a watchlist — verifies ownership */
   async addItem(watchlistId: number, stockId: number, userId: string): Promise<WatchlistItemEntity> {
-    await this.findOne(watchlistId, userId);
+    await this.verifyOwnership(watchlistId, userId);
 
     try {
       const item = this.itemRepo.create({ watchlistId, stockId });
@@ -80,7 +94,7 @@ export class WatchlistsService {
 
   /** Remove a stock from a watchlist — verifies ownership */
   async removeItem(watchlistId: number, stockId: number, userId: string): Promise<void> {
-    await this.findOne(watchlistId, userId);
+    await this.verifyOwnership(watchlistId, userId);
 
     const result = await this.itemRepo.delete({ watchlistId, stockId });
     if (result.affected === 0) {

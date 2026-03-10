@@ -3,7 +3,8 @@
 import grpc
 import warnings
 
-from generated import analytics_pb2 as analytics__pb2
+import analytics_pb2 as analytics__pb2
+from common import health_pb2 as common_dot_health__pb2
 
 GRPC_GENERATED_VERSION = '1.68.0'
 GRPC_VERSION = grpc.__version__
@@ -26,10 +27,7 @@ if _version_not_supported:
 
 
 class AnalyticsServiceStub(object):
-    """Note: common/types.proto not imported — analytics defines its own message types.
-    If shared types are needed later, add: import "common/types.proto";
-
-    ============================================
+    """============================================
     ANALYTICS SERVICE — Metrics & Indicators
     ============================================
 
@@ -73,16 +71,13 @@ class AnalyticsServiceStub(object):
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
                 '/stock.analytics.v1.AnalyticsService/HealthCheck',
-                request_serializer=analytics__pb2.HealthCheckRequest.SerializeToString,
-                response_deserializer=analytics__pb2.HealthCheckResponse.FromString,
+                request_serializer=common_dot_health__pb2.HealthCheckRequest.SerializeToString,
+                response_deserializer=common_dot_health__pb2.HealthCheckResponse.FromString,
                 _registered_method=True)
 
 
 class AnalyticsServiceServicer(object):
-    """Note: common/types.proto not imported — analytics defines its own message types.
-    If shared types are needed later, add: import "common/types.proto";
-
-    ============================================
+    """============================================
     ANALYTICS SERVICE — Metrics & Indicators
     ============================================
 
@@ -172,8 +167,8 @@ def add_AnalyticsServiceServicer_to_server(servicer, server):
             ),
             'HealthCheck': grpc.unary_unary_rpc_method_handler(
                     servicer.HealthCheck,
-                    request_deserializer=analytics__pb2.HealthCheckRequest.FromString,
-                    response_serializer=analytics__pb2.HealthCheckResponse.SerializeToString,
+                    request_deserializer=common_dot_health__pb2.HealthCheckRequest.FromString,
+                    response_serializer=common_dot_health__pb2.HealthCheckResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -184,10 +179,7 @@ def add_AnalyticsServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class AnalyticsService(object):
-    """Note: common/types.proto not imported — analytics defines its own message types.
-    If shared types are needed later, add: import "common/types.proto";
-
-    ============================================
+    """============================================
     ANALYTICS SERVICE — Metrics & Indicators
     ============================================
 
@@ -370,8 +362,8 @@ class AnalyticsService(object):
             request,
             target,
             '/stock.analytics.v1.AnalyticsService/HealthCheck',
-            analytics__pb2.HealthCheckRequest.SerializeToString,
-            analytics__pb2.HealthCheckResponse.FromString,
+            common_dot_health__pb2.HealthCheckRequest.SerializeToString,
+            common_dot_health__pb2.HealthCheckResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -22,6 +22,7 @@ from repositories.ohlcv_repository import OHLCVRepository
 from repositories.financial_report_repository import FinancialReportRepository
 from scheduler.data_collection_scheduler import DataCollectionScheduler
 from generated import informer_pb2_grpc
+from utils.retry import retry_with_backoff
 
 # Configure structured logging before importing other local modules
 logging.basicConfig(
@@ -42,7 +43,12 @@ def serve() -> None:
 
     # ── Database ──────────────────────────────────────────────────────────────
     db_pool = DatabasePool(settings)
-    db_pool.initialize()
+
+    @retry_with_backoff(max_retries=5, backoff_factor=2.0, exceptions=(Exception,))
+    def _init_db():
+        db_pool.initialize()
+
+    _init_db()
 
     # ── Repositories ──────────────────────────────────────────────────────────
     stock_repo = StockRepository(db_pool)

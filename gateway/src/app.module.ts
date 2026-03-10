@@ -10,6 +10,7 @@ import { StocksModule } from './stocks/stocks.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { WatchlistsModule } from './watchlists/watchlists.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { HealthModule } from './health/health.module';
     // gRPC client proxies for Informer and Analytics services
     GrpcClientModule,
     // Feature modules
+    AuthModule,
     StocksModule,
     AnalyticsModule,
     WatchlistsModule,

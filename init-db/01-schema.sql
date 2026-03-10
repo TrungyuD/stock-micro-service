@@ -202,3 +202,33 @@ CREATE TABLE IF NOT EXISTS watchlist_items (
 );
 
 CREATE INDEX idx_watchlist_items_watchlist ON watchlist_items (watchlist_id);
+
+-- ============================================
+-- USERS TABLE (authentication)
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_users_email ON users (email);
+
+-- ============================================
+-- REFRESH TOKENS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    token_hash VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
+CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens (token_hash);

@@ -1,26 +1,13 @@
 """
-indicator-repository.py — Read/write access to the `indicators` table.
+indicator_repository.py — Read/write access to the `indicators` table.
 Stores pre-computed technical indicators so they are not recalculated on every RPC call.
 """
 import logging
-from typing import Any
-
-import numpy as np
 
 from database import DatabasePool
+from utils.numeric_helpers import to_native
 
 logger = logging.getLogger(__name__)
-
-
-def _to_native(v: Any) -> Any:
-    """Convert numpy scalars to native Python types for psycopg2 compatibility."""
-    if isinstance(v, (np.integer,)):
-        return int(v)
-    if isinstance(v, (np.floating,)):
-        return float(v)
-    if isinstance(v, np.ndarray):
-        return v.tolist()
-    return v
 
 
 class IndicatorRepository:
@@ -76,18 +63,18 @@ class IndicatorRepository:
             (
                 stock_id,
                 data["time"],
-                _to_native(data.get("rsi_14")),
-                _to_native(data.get("sma_20")),
-                _to_native(data.get("sma_50")),
-                _to_native(data.get("sma_200")),
-                _to_native(data.get("ema_20")),
-                _to_native(data.get("ema_50")),
-                _to_native(data.get("macd_line")),
-                _to_native(data.get("macd_signal")),
-                _to_native(data.get("macd_histogram")),
-                _to_native(data.get("bb_upper")),
-                _to_native(data.get("bb_middle")),
-                _to_native(data.get("bb_lower")),
+                to_native(data.get("rsi_14")),
+                to_native(data.get("sma_20")),
+                to_native(data.get("sma_50")),
+                to_native(data.get("sma_200")),
+                to_native(data.get("ema_20")),
+                to_native(data.get("ema_50")),
+                to_native(data.get("macd_line")),
+                to_native(data.get("macd_signal")),
+                to_native(data.get("macd_histogram")),
+                to_native(data.get("bb_upper")),
+                to_native(data.get("bb_middle")),
+                to_native(data.get("bb_lower")),
             ),
         )
         logger.debug("Upserted indicators for stock_id=%s at %s", stock_id, data["time"])

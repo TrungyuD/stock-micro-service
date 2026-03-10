@@ -30,6 +30,22 @@ class StockRepository:
             fetch="one",
         )
 
+    def get_by_symbols(self, symbols: list[str]) -> list[dict]:
+        """Return stock rows matching any of the given symbols (batch query)."""
+        if not symbols:
+            return []
+        return self._db.execute(
+            """
+            SELECT id, symbol, name, sector, industry, exchange,
+                   country, currency, market_cap, description, website, is_active,
+                   created_at, updated_at
+              FROM stocks
+             WHERE symbol = ANY(%s)
+            """,
+            ([s.upper() for s in symbols],),
+            fetch="all",
+        ) or []
+
     def get_by_id(self, stock_id: int) -> Optional[dict]:
         """Return a single stock row by primary key, or None."""
         return self._db.execute(

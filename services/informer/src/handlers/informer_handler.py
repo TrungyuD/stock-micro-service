@@ -3,6 +3,7 @@ informer_handler.py — gRPC servicer implementing all 8 InformerService RPCs.
 Maps between proto messages and repository/provider data layer.
 """
 import logging
+import math
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -11,7 +12,9 @@ import grpc
 
 from generated import informer_pb2, informer_pb2_grpc
 from generated.common import types_pb2
+from generated.common import health_pb2
 from handlers import stock_admin_handler as _admin_mod
+from mappers.stock_mapper import dict_to_stock
 from utils.validators import validate_symbol
 
 logger = logging.getLogger(__name__)
@@ -50,7 +53,7 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
                 context.set_code(grpc.StatusCode.NOT_FOUND)
                 context.set_details(f"Symbol not found: {symbol}")
                 return informer_pb2.GetStockInfoResponse()
-            return informer_pb2.GetStockInfoResponse(stock=_dict_to_stock(data))
+            return informer_pb2.GetStockInfoResponse(stock=dict_to_stock(data))
         except Exception as exc:
             logger.exception("GetStockInfo failed for %s", symbol)
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -73,10 +76,9 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
                 page=page,
                 page_size=page_size,
             )
-            import math
             total_pages = math.ceil(total / page_size) if page_size else 1
             return informer_pb2.ListStocksResponse(
-                stocks=[_dict_to_stock(r) for r in rows],
+                stocks=[dict_to_stock(r) for r in rows],
                 pagination=types_pb2.PaginationResponse(
                     total_count=total,
                     page=page,
@@ -94,23 +96,30 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
 
     def BatchGetStocks(self, request, context):
         """Fetch multiple stocks by symbol list; report not-found symbols."""
-        found: list[types_pb2.Stock] = []
-        not_found: list[str] = []
-
+        # Validate, normalize, and deduplicate symbols upfront
+        seen: set[str] = set()
+        valid_symbols: list[str] = []
+        invalid_symbols: list[str] = []
         for symbol in request.symbols:
             sym = symbol.strip().upper()
             if not validate_symbol(sym):
-                not_found.append(symbol)
-                continue
-            try:
-                row = self._stock_repo.get_by_symbol(sym)
-                if row:
-                    found.append(_dict_to_stock(row))
-                else:
-                    not_found.append(symbol)
-            except Exception as exc:
-                logger.warning("BatchGetStocks: error for %s: %s", sym, exc)
-                not_found.append(symbol)
+                invalid_symbols.append(symbol)
+            elif sym not in seen:
+                seen.add(sym)
+                valid_symbols.append(sym)
+
+        try:
+            # Single batch query instead of N individual queries
+            rows = self._stock_repo.get_by_symbols(valid_symbols)
+            found_map = {r["symbol"]: r for r in rows}
+
+            found = [dict_to_stock(found_map[s]) for s in valid_symbols if s in found_map]
+            not_found = invalid_symbols + [s for s in valid_symbols if s not in found_map]
+        except Exception as exc:
+            logger.exception("BatchGetStocks failed")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(exc))
+            return informer_pb2.BatchGetStocksResponse()
 
         return informer_pb2.BatchGetStocksResponse(stocks=found, not_found=not_found)
 
@@ -314,7 +323,7 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
         uptime_secs = (datetime.now(timezone.utc) - _START_TIME).total_seconds()
         uptime_str = f"{int(uptime_secs)}s"
 
-        return informer_pb2.HealthCheckResponse(
+        return health_pb2.HealthCheckResponse(
             status=status,
             version=_VERSION,
             uptime=uptime_str,
@@ -333,23 +342,7 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
 
 
 # ─── proto mapping helpers ────────────────────────────────────────────────────
-
-def _dict_to_stock(row: dict) -> types_pb2.Stock:
-    """Convert a `stocks` table row dict to a proto Stock message."""
-    return types_pb2.Stock(
-        id=row.get("id") or 0,
-        symbol=row.get("symbol") or "",
-        name=row.get("name") or "",
-        sector=row.get("sector") or "",
-        industry=row.get("industry") or "",
-        exchange=row.get("exchange") or "",
-        country=row.get("country") or "",
-        currency=row.get("currency") or "",
-        market_cap=row.get("market_cap") or 0,
-        description=row.get("description") or "",
-        website=row.get("website") or "",
-        is_active=bool(row.get("is_active", True)),
-    )
+# dict_to_stock moved to mappers/stock_mapper.py
 
 
 def _dict_to_financial_report(row: dict, symbol: str) -> informer_pb2.FinancialReport:

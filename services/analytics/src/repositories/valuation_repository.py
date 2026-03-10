@@ -1,26 +1,13 @@
 """
-valuation-repository.py — Read/write access to the `valuation_metrics` table.
+valuation_repository.py — Read/write access to the `valuation_metrics` table.
 Stores pre-computed fundamental valuation ratios per stock.
 """
 import logging
-from typing import Any
-
-import numpy as np
 
 from database import DatabasePool
+from utils.numeric_helpers import to_native
 
 logger = logging.getLogger(__name__)
-
-
-def _to_native(v: Any) -> Any:
-    """Convert numpy scalars to native Python types for psycopg2 compatibility."""
-    if isinstance(v, (np.integer,)):
-        return int(v)
-    if isinstance(v, (np.floating,)):
-        return float(v)
-    if isinstance(v, np.ndarray):
-        return v.tolist()
-    return v
 
 
 class ValuationRepository:
@@ -50,6 +37,56 @@ class ValuationRepository:
             FROM valuation_metrics vm
             JOIN stocks s ON s.id = vm.stock_id
             WHERE s.is_active = TRUE
+            ORDER BY vm.stock_id, vm.calculated_at DESC
+            """,
+            fetch="all",
+        ) or []
+
+    def get_screening_data(self) -> list[dict]:
+        """
+        Single batch query returning valuation + latest close + latest indicators
+        for all active stocks. Replaces 3 separate per-stock queries in ScreenStocks.
+
+        Uses LATERAL joins for efficient "latest row per stock" pattern.
+        Returns one row per stock with prefixed columns:
+          - vm.* columns (valuation metrics)
+          - s.symbol, s.name, s.sector (stock info)
+          - latest_close (from ohlcv)
+          - ind_* columns (from indicators)
+        """
+        return self._db.execute(
+            """
+            SELECT DISTINCT ON (vm.stock_id)
+                vm.*,
+                s.symbol, s.name, s.sector,
+                ohlcv_lat.close AS latest_close,
+                ind_lat.rsi_14 AS ind_rsi_14,
+                ind_lat.sma_20 AS ind_sma_20,
+                ind_lat.sma_50 AS ind_sma_50,
+                ind_lat.sma_200 AS ind_sma_200,
+                ind_lat.ema_20 AS ind_ema_20,
+                ind_lat.ema_50 AS ind_ema_50,
+                ind_lat.macd_line AS ind_macd_line,
+                ind_lat.macd_signal AS ind_macd_signal,
+                ind_lat.macd_histogram AS ind_macd_histogram,
+                ind_lat.bb_upper AS ind_bb_upper,
+                ind_lat.bb_middle AS ind_bb_middle,
+                ind_lat.bb_lower AS ind_bb_lower
+            FROM valuation_metrics vm
+            JOIN stocks s ON s.id = vm.stock_id AND s.is_active = TRUE
+            LEFT JOIN LATERAL (
+                SELECT close FROM ohlcv
+                WHERE stock_id = vm.stock_id
+                ORDER BY time DESC LIMIT 1
+            ) ohlcv_lat ON true
+            LEFT JOIN LATERAL (
+                SELECT rsi_14, sma_20, sma_50, sma_200, ema_20, ema_50,
+                       macd_line, macd_signal, macd_histogram,
+                       bb_upper, bb_middle, bb_lower
+                FROM indicators
+                WHERE stock_id = vm.stock_id
+                ORDER BY time DESC LIMIT 1
+            ) ind_lat ON true
             ORDER BY vm.stock_id, vm.calculated_at DESC
             """,
             fetch="all",
@@ -90,16 +127,16 @@ class ValuationRepository:
             (
                 stock_id,
                 data["calculated_at"],
-                _to_native(data.get("trailing_pe")),
-                _to_native(data.get("forward_pe")),
-                _to_native(data.get("peg_ratio")),
-                _to_native(data.get("price_to_book")),
-                _to_native(data.get("price_to_sales")),
-                _to_native(data.get("ev_to_ebitda")),
-                _to_native(data.get("dividend_yield")),
-                _to_native(data.get("payout_ratio")),
+                to_native(data.get("trailing_pe")),
+                to_native(data.get("forward_pe")),
+                to_native(data.get("peg_ratio")),
+                to_native(data.get("price_to_book")),
+                to_native(data.get("price_to_sales")),
+                to_native(data.get("ev_to_ebitda")),
+                to_native(data.get("dividend_yield")),
+                to_native(data.get("payout_ratio")),
                 data.get("valuation_signal"),
-                _to_native(data.get("valuation_score")),
+                to_native(data.get("valuation_score")),
             ),
         )
         logger.debug("Upserted valuation_metrics for stock_id=%s at %s", stock_id, data["calculated_at"])

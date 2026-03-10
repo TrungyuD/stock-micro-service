@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package stock.analytics.v1;
 
-// Note: common/types.proto not imported — analytics defines its own message types.
-// If shared types are needed later, add: import "common/types.proto";
+import "common/health.proto";
 
 // ============================================
 // ANALYTICS SERVICE — Metrics & Indicators
@@ -29,7 +28,7 @@ service AnalyticsService {
   rpc TriggerCalculation (TriggerCalculationRequest) returns (TriggerCalculationResponse);
 
   // Health check
-  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+  rpc HealthCheck (stock.common.HealthCheckRequest) returns (stock.common.HealthCheckResponse);
 }
 
 // ============================================
@@ -215,14 +214,4 @@ message TriggerCalculationResponse {
   string message = 2;
 }
 
-// ============================================
-// HEALTH CHECK
-// ============================================
-
-message HealthCheckRequest {}
-
-message HealthCheckResponse {
-  string status = 1;
-  string version = 2;
-  string uptime = 3;
-}
+// Health check messages are defined in common/health.proto

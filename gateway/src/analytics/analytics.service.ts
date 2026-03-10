@@ -4,7 +4,7 @@
  */
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { lastValueFrom, Observable } from 'rxjs';
+import { lastValueFrom, Observable, timeout } from 'rxjs';
 import { GetTechnicalIndicatorsQueryDto } from './dto/get-technical-indicators-query.dto';
 import { GetStockAnalysisQueryDto } from './dto/get-stock-analysis-query.dto';
 import { ScreenStocksDto } from './dto/screen-stocks.dto';
@@ -19,6 +19,9 @@ interface AnalyticsGrpcService {
   HealthCheck(req: Record<string, never>): Observable<any>;
 }
 
+/** Default gRPC call timeout in ms */
+const GRPC_TIMEOUT_MS = 10_000;
+
 @Injectable()
 export class AnalyticsService implements OnModuleInit {
   private readonly logger = new Logger(AnalyticsService.name);
@@ -32,14 +35,19 @@ export class AnalyticsService implements OnModuleInit {
     this.logger.log('Analytics gRPC client initialized');
   }
 
+  /** Wraps an observable with timeout to prevent indefinite hangs */
+  private call<T>(obs: Observable<T>, timeoutMs = GRPC_TIMEOUT_MS): Promise<T> {
+    return lastValueFrom(obs.pipe(timeout(timeoutMs)));
+  }
+
   /** Get valuation metrics (P/E, P/B, PEG, etc.) */
   async getValuationMetrics(symbol: string) {
-    return lastValueFrom(this.analyticsService.GetValuationMetrics({ symbol }));
+    return this.call(this.analyticsService.GetValuationMetrics({ symbol }));
   }
 
   /** Get technical indicators (RSI, MACD, Bollinger, MAs) */
   async getTechnicalIndicators(symbol: string, query: GetTechnicalIndicatorsQueryDto) {
-    return lastValueFrom(
+    return this.call(
       this.analyticsService.GetTechnicalIndicators({
         symbol,
         timeframe: query.timeframe ?? '1d',
@@ -49,7 +57,7 @@ export class AnalyticsService implements OnModuleInit {
 
   /** Get combined stock analysis (valuation + technicals + recommendation) */
   async getStockAnalysis(symbol: string, query: GetStockAnalysisQueryDto) {
-    return lastValueFrom(
+    return this.call(
       this.analyticsService.GetStockAnalysis({
         symbol,
         include_rationale: query.includeRationale ?? false,
@@ -59,12 +67,12 @@ export class AnalyticsService implements OnModuleInit {
 
   /** Batch analysis for multiple symbols */
   async batchAnalysis(symbols: string[]) {
-    return lastValueFrom(this.analyticsService.BatchAnalysis({ symbols }));
+    return this.call(this.analyticsService.BatchAnalysis({ symbols }), 15_000);
   }
 
   /** Screen stocks by criteria */
   async screenStocks(dto: ScreenStocksDto) {
-    return lastValueFrom(
+    return this.call(
       this.analyticsService.ScreenStocks({
         criteria: {
           min_pe: dto.minPe ?? 0,
@@ -81,11 +89,12 @@ export class AnalyticsService implements OnModuleInit {
         limit: dto.limit ?? 20,
         sort_by: dto.sortBy ?? '',
       }),
+      15_000, // screening scans all stocks
     );
   }
 
   /** Check Analytics service health */
   async healthCheck() {
-    return lastValueFrom(this.analyticsService.HealthCheck({}));
+    return this.call(this.analyticsService.HealthCheck({}), 3_000);
   }
 }

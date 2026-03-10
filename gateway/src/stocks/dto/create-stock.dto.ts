@@ -1,17 +1,19 @@
 /**
  * create-stock.dto.ts — Request body for creating a new stock.
  */
-import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength, IsNotEmpty, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateStockDto {
   @ApiProperty({ example: 'AAPL', maxLength: 10 })
   @IsString()
-  @MaxLength(10)
+  @IsNotEmpty()
+  @Matches(/^[A-Z0-9.]{1,10}$/, { message: 'symbol must be 1-10 uppercase letters, digits, or dots' })
   symbol: string;
 
   @ApiProperty({ example: 'Apple Inc.' })
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
   name: string;
 

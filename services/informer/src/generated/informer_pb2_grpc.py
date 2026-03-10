@@ -3,7 +3,8 @@
 import grpc
 import warnings
 
-from generated import informer_pb2 as informer__pb2
+from common import health_pb2 as common_dot_health__pb2
+import informer_pb2 as informer__pb2
 
 GRPC_GENERATED_VERSION = '1.68.0'
 GRPC_VERSION = grpc.__version__
@@ -90,8 +91,8 @@ class InformerServiceStub(object):
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
                 '/stock.informer.v1.InformerService/HealthCheck',
-                request_serializer=informer__pb2.HealthCheckRequest.SerializeToString,
-                response_deserializer=informer__pb2.HealthCheckResponse.FromString,
+                request_serializer=common_dot_health__pb2.HealthCheckRequest.SerializeToString,
+                response_deserializer=common_dot_health__pb2.HealthCheckResponse.FromString,
                 _registered_method=True)
 
 
@@ -229,8 +230,8 @@ def add_InformerServiceServicer_to_server(servicer, server):
             ),
             'HealthCheck': grpc.unary_unary_rpc_method_handler(
                     servicer.HealthCheck,
-                    request_deserializer=informer__pb2.HealthCheckRequest.FromString,
-                    response_serializer=informer__pb2.HealthCheckResponse.SerializeToString,
+                    request_deserializer=common_dot_health__pb2.HealthCheckRequest.FromString,
+                    response_serializer=common_dot_health__pb2.HealthCheckResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -532,8 +533,8 @@ class InformerService(object):
             request,
             target,
             '/stock.informer.v1.InformerService/HealthCheck',
-            informer__pb2.HealthCheckRequest.SerializeToString,
-            informer__pb2.HealthCheckResponse.FromString,
+            common_dot_health__pb2.HealthCheckRequest.SerializeToString,
+            common_dot_health__pb2.HealthCheckResponse.FromString,
             options,
             channel_credentials,
             insecure,

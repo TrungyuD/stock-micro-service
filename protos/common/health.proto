@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package stock.common;
+
+// ============================================
+// HEALTH CHECK — shared by Informer & Analytics
+// ============================================
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;               // "SERVING", "NOT_SERVING"
+  string version = 2;
+  string uptime = 3;
+}

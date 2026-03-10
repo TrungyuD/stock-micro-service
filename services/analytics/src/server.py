@@ -23,6 +23,7 @@ from repositories.stock_data_repository import StockDataRepository
 from repositories.valuation_repository import ValuationRepository
 from scheduler.calculation_scheduler import CalculationScheduler
 from generated import analytics_pb2_grpc
+from utils.retry import retry_with_backoff
 
 # Configure structured logging before importing other local modules
 logging.basicConfig(
@@ -43,7 +44,12 @@ def serve() -> None:
 
     # ── Database ──────────────────────────────────────────────────────────────
     db_pool = DatabasePool(settings)
-    db_pool.initialize()
+
+    @retry_with_backoff(max_retries=5, backoff_factor=2.0, exceptions=(Exception,))
+    def _init_db():
+        db_pool.initialize()
+
+    _init_db()
 
     # ── Repositories ──────────────────────────────────────────────────────────
     stock_data_repo = StockDataRepository(db_pool)

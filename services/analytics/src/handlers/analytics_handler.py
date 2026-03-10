@@ -13,6 +13,7 @@ import grpc
 from calculators.technical_calculator import TechnicalCalculator
 from calculators.valuation_calculator import ValuationCalculator
 from generated import analytics_pb2, analytics_pb2_grpc
+from generated.common import health_pb2
 from handlers.compute_helpers import ComputeService
 from handlers.proto_mappers import dict_to_technicals_proto, dict_to_valuation_proto
 from handlers.recommendation_helpers import build_rationale, combine_recommendation
@@ -25,6 +26,7 @@ from handlers.screening_helpers import (
 from repositories.indicator_repository import IndicatorRepository
 from repositories.stock_data_repository import StockDataRepository
 from repositories.valuation_repository import ValuationRepository
+from utils.numeric_helpers import safe_float_or_zero
 
 logger = logging.getLogger(__name__)
 
@@ -173,19 +175,41 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
         sort_by = request.sort_by or "valuation_score"
         try:
             matched = []
-            for row in self._val_repo.get_all_latest():
-                stock_id = row["stock_id"]
+            # Single batch query returns valuation + close + indicators for all stocks
+            for row in self._val_repo.get_screening_data():
                 symbol = row.get("symbol", "")
+
                 if not passes_valuation_criteria(row, criteria):
                     continue
-                current_price = self._stock_repo.get_latest_close(stock_id) or 0.0
-                ind_row = self._ind_repo.get_latest(stock_id)
-                if ind_row:
+
+                current_price = float(row["latest_close"]) if row.get("latest_close") else 0.0
+
+                # Reconstruct indicator dict from prefixed columns.
+                # Cast to float to handle Decimal values from LATERAL JOIN.
+                ind_row = None
+                if row.get("ind_rsi_14") is not None:
+                    _f = safe_float_or_zero
+                    ind_row = {
+                        "rsi_14": _f(row["ind_rsi_14"]),
+                        "sma_20": _f(row["ind_sma_20"]),
+                        "sma_50": _f(row["ind_sma_50"]),
+                        "sma_200": _f(row["ind_sma_200"]),
+                        "ema_20": _f(row["ind_ema_20"]),
+                        "ema_50": _f(row["ind_ema_50"]),
+                        "macd_line": _f(row["ind_macd_line"]),
+                        "macd_signal": _f(row["ind_macd_signal"]),
+                        "macd_histogram": _f(row["ind_macd_histogram"]),
+                        "bb_upper": _f(row["ind_bb_upper"]),
+                        "bb_middle": _f(row["ind_bb_middle"]),
+                        "bb_lower": _f(row["ind_bb_lower"]),
+                    }
                     ind_row["_signals"] = self._svc.resolve_signals(ind_row, current_price)
+
                 if not passes_technical_criteria(ind_row, criteria):
                     continue
                 if criteria.sector and row.get("sector", "") != criteria.sector:
                     continue
+
                 matched.append(analytics_pb2.ScreenedStock(
                     symbol=symbol,
                     company_name=row.get("name", ""),
@@ -256,7 +280,7 @@ class AnalyticsHandler(analytics_pb2_grpc.AnalyticsServiceServicer):
             logger.warning("HealthCheck DB probe failed: %s", exc)
         status = "SERVING" if db_ok else "NOT_SERVING"
         uptime = f"{int((datetime.now(timezone.utc) - _START_TIME).total_seconds())}s"
-        return analytics_pb2.HealthCheckResponse(
+        return health_pb2.HealthCheckResponse(
             status=status, version=_VERSION, uptime=uptime
         )
 

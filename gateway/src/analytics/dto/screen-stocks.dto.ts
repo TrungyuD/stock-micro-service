@@ -1,7 +1,7 @@
 /**
  * screen-stocks.dto.ts — Request body for the stock screening endpoint.
  */
-import { IsOptional, IsNumber, IsBoolean, IsString, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsNumber, IsBoolean, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ScreenStocksDto {
@@ -45,9 +45,9 @@ export class ScreenStocksDto {
   @IsBoolean()
   rsiOverbought?: boolean;
 
-  @ApiPropertyOptional({ description: 'Trend direction: "Bullish" or "Bearish"' })
+  @ApiPropertyOptional({ description: 'Trend direction: "Bullish" or "Bearish"', enum: ['Bullish', 'Bearish'] })
   @IsOptional()
-  @IsString()
+  @IsIn(['Bullish', 'Bearish'], { message: 'trendDirection must be Bullish or Bearish' })
   trendDirection?: string;
 
   @ApiPropertyOptional({ description: 'Filter by sector' })
@@ -62,8 +62,11 @@ export class ScreenStocksDto {
   @Max(100)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Sort field (e.g., "valuation_score", "pe_ratio")' })
+  @ApiPropertyOptional({
+    description: 'Sort field',
+    enum: ['valuation_score', 'match_score', 'current_price'],
+  })
   @IsOptional()
-  @IsString()
+  @IsIn(['valuation_score', 'match_score', 'current_price'], { message: 'sortBy must be valuation_score, match_score, or current_price' })
   sortBy?: string;
 }

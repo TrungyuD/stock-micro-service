@@ -3,6 +3,7 @@ syntax = "proto3";
 package stock.informer.v1;
 
 import "common/types.proto";
+import "common/health.proto";
 
 // ============================================
 // INFORMER SERVICE — Data Collection & Retrieval
@@ -30,7 +31,7 @@ service InformerService {
   rpc TriggerDataCollection (TriggerDataCollectionRequest) returns (TriggerDataCollectionResponse);
 
   // Health check
-  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+  rpc HealthCheck (stock.common.HealthCheckRequest) returns (stock.common.HealthCheckResponse);
 }
 
 // ============================================
@@ -157,17 +158,7 @@ message TriggerDataCollectionResponse {
   string message = 3;
 }
 
-// ============================================
-// HEALTH CHECK
-// ============================================
-
-message HealthCheckRequest {}
-
-message HealthCheckResponse {
-  string status = 1;               // "SERVING", "NOT_SERVING"
-  string version = 2;
-  string uptime = 3;
-}
+// Health check messages are defined in common/health.proto
 
 // ============================================
 // STOCK ADMIN CRUD

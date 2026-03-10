@@ -22,62 +22,59 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from generated.common import types_pb2 as common_dot_types__pb2
+from common import types_pb2 as common_dot_types__pb2
+from common import health_pb2 as common_dot_health__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0einformer.proto\x12\x11stock.informer.v1\x1a\x12\x63ommon/types.proto\"%\n\x13GetStockInfoRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\":\n\x14GetStockInfoResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"\x8b\x01\n\x11ListStocksRequest\x12\x10\n\x08\x65xchange\x18\x01 \x01(\t\x12\x0e\n\x06sector\x18\x02 \x01(\t\x12\x0e\n\x06search\x18\x03 \x01(\t\x12\x33\n\npagination\x18\x04 \x01(\x0b\x32\x1f.stock.common.PaginationRequest\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"o\n\x12ListStocksResponse\x12#\n\x06stocks\x18\x01 \x03(\x0b\x32\x13.stock.common.Stock\x12\x34\n\npagination\x18\x02 \x01(\x0b\x32 .stock.common.PaginationResponse\"(\n\x15\x42\x61tchGetStocksRequest\x12\x0f\n\x07symbols\x18\x01 \x03(\t\"P\n\x16\x42\x61tchGetStocksResponse\x12#\n\x06stocks\x18\x01 \x03(\x0b\x32\x13.stock.common.Stock\x12\x11\n\tnot_found\x18\x02 \x03(\t\"o\n\x16GetPriceHistoryRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x10\n\x08interval\x18\x02 \x01(\t\x12\x12\n\nstart_date\x18\x03 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x04 \x01(\t\x12\r\n\x05limit\x18\x05 \x01(\x05\"\x90\x01\n\x17GetPriceHistoryResponse\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12$\n\x07\x63\x61ndles\x18\x02 \x03(\x0b\x32\x13.stock.common.OHLCV\x12\x15\n\rtotal_records\x18\x03 \x01(\x05\x12\x14\n\x0cperiod_start\x18\x04 \x01(\t\x12\x12\n\nperiod_end\x18\x05 \x01(\t\"\xc2\x03\n\x0f\x46inancialReport\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_date\x18\x02 \x01(\t\x12\x13\n\x0breport_type\x18\x03 \x01(\t\x12\x0f\n\x07revenue\x18\x04 \x01(\x01\x12\x14\n\x0cgross_profit\x18\x05 \x01(\x01\x12\x18\n\x10operating_income\x18\x06 \x01(\x01\x12\x12\n\nnet_income\x18\x07 \x01(\x01\x12\x0b\n\x03\x65ps\x18\x08 \x01(\x01\x12\x14\n\x0ctotal_assets\x18\t \x01(\x01\x12\x19\n\x11total_liabilities\x18\n \x01(\x01\x12\x1b\n\x13shareholders_equity\x18\x0b \x01(\x01\x12\x1c\n\x14\x62ook_value_per_share\x18\x0c \x01(\x01\x12\x1b\n\x13operating_cash_flow\x18\r \x01(\x01\x12\x16\n\x0e\x66ree_cash_flow\x18\x0e \x01(\x01\x12\r\n\x05\x63\x61pex\x18\x0f \x01(\x01\x12\x1a\n\x12shares_outstanding\x18\x10 \x01(\x03\x12\x16\n\x0e\x64\x65\x62t_to_equity\x18\x11 \x01(\x01\x12\x15\n\rcurrent_ratio\x18\x12 \x01(\x01\x12\x0b\n\x03roe\x18\x13 \x01(\x01\x12\x0b\n\x03roa\x18\x14 \x01(\x01\"@\n\x19GetFinancialReportRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_type\x18\x02 \x01(\t\"P\n\x1aGetFinancialReportResponse\x12\x32\n\x06report\x18\x01 \x01(\x0b\x32\".stock.informer.v1.FinancialReport\"U\n\x1aGetFinancialReportsRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_type\x18\x02 \x01(\t\x12\x12\n\nyears_back\x18\x03 \x01(\x05\"R\n\x1bGetFinancialReportsResponse\x12\x33\n\x07reports\x18\x01 \x03(\x0b\x32\".stock.informer.v1.FinancialReport\"V\n\x1cTriggerDataCollectionRequest\x12\x0f\n\x07symbols\x18\x01 \x03(\t\x12\x11\n\tdata_type\x18\x02 \x01(\t\x12\x12\n\nstart_date\x18\x03 \x01(\t\"R\n\x1dTriggerDataCollectionResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"\x14\n\x12HealthCheckRequest\"F\n\x13HealthCheckResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x0e\n\x06uptime\x18\x03 \x01(\t\"8\n\x12\x43reateStockRequest\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"9\n\x13\x43reateStockResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"H\n\x12UpdateStockRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x05stock\x18\x02 \x01(\x0b\x32\x13.stock.common.Stock\"9\n\x13UpdateStockResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"$\n\x12\x44\x65leteStockRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\"7\n\x13\x44\x65leteStockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\xfb\x08\n\x0fInformerService\x12_\n\x0cGetStockInfo\x12&.stock.informer.v1.GetStockInfoRequest\x1a\'.stock.informer.v1.GetStockInfoResponse\x12Y\n\nListStocks\x12$.stock.informer.v1.ListStocksRequest\x1a%.stock.informer.v1.ListStocksResponse\x12\x65\n\x0e\x42\x61tchGetStocks\x12(.stock.informer.v1.BatchGetStocksRequest\x1a).stock.informer.v1.BatchGetStocksResponse\x12h\n\x0fGetPriceHistory\x12).stock.informer.v1.GetPriceHistoryRequest\x1a*.stock.informer.v1.GetPriceHistoryResponse\x12q\n\x12GetFinancialReport\x12,.stock.informer.v1.GetFinancialReportRequest\x1a-.stock.informer.v1.GetFinancialReportResponse\x12t\n\x13GetFinancialReports\x12-.stock.informer.v1.GetFinancialReportsRequest\x1a..stock.informer.v1.GetFinancialReportsResponse\x12\\\n\x0b\x43reateStock\x12%.stock.informer.v1.CreateStockRequest\x1a&.stock.informer.v1.CreateStockResponse\x12\\\n\x0bUpdateStock\x12%.stock.informer.v1.UpdateStockRequest\x1a&.stock.informer.v1.UpdateStockResponse\x12\\\n\x0b\x44\x65leteStock\x12%.stock.informer.v1.DeleteStockRequest\x1a&.stock.informer.v1.DeleteStockResponse\x12z\n\x15TriggerDataCollection\x12/.stock.informer.v1.TriggerDataCollectionRequest\x1a\x30.stock.informer.v1.TriggerDataCollectionResponse\x12\\\n\x0bHealthCheck\x12%.stock.informer.v1.HealthCheckRequest\x1a&.stock.informer.v1.HealthCheckResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0einformer.proto\x12\x11stock.informer.v1\x1a\x12\x63ommon/types.proto\x1a\x13\x63ommon/health.proto\"%\n\x13GetStockInfoRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\":\n\x14GetStockInfoResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"\x8b\x01\n\x11ListStocksRequest\x12\x10\n\x08\x65xchange\x18\x01 \x01(\t\x12\x0e\n\x06sector\x18\x02 \x01(\t\x12\x0e\n\x06search\x18\x03 \x01(\t\x12\x33\n\npagination\x18\x04 \x01(\x0b\x32\x1f.stock.common.PaginationRequest\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\"o\n\x12ListStocksResponse\x12#\n\x06stocks\x18\x01 \x03(\x0b\x32\x13.stock.common.Stock\x12\x34\n\npagination\x18\x02 \x01(\x0b\x32 .stock.common.PaginationResponse\"(\n\x15\x42\x61tchGetStocksRequest\x12\x0f\n\x07symbols\x18\x01 \x03(\t\"P\n\x16\x42\x61tchGetStocksResponse\x12#\n\x06stocks\x18\x01 \x03(\x0b\x32\x13.stock.common.Stock\x12\x11\n\tnot_found\x18\x02 \x03(\t\"o\n\x16GetPriceHistoryRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x10\n\x08interval\x18\x02 \x01(\t\x12\x12\n\nstart_date\x18\x03 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x04 \x01(\t\x12\r\n\x05limit\x18\x05 \x01(\x05\"\x90\x01\n\x17GetPriceHistoryResponse\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12$\n\x07\x63\x61ndles\x18\x02 \x03(\x0b\x32\x13.stock.common.OHLCV\x12\x15\n\rtotal_records\x18\x03 \x01(\x05\x12\x14\n\x0cperiod_start\x18\x04 \x01(\t\x12\x12\n\nperiod_end\x18\x05 \x01(\t\"\xc2\x03\n\x0f\x46inancialReport\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_date\x18\x02 \x01(\t\x12\x13\n\x0breport_type\x18\x03 \x01(\t\x12\x0f\n\x07revenue\x18\x04 \x01(\x01\x12\x14\n\x0cgross_profit\x18\x05 \x01(\x01\x12\x18\n\x10operating_income\x18\x06 \x01(\x01\x12\x12\n\nnet_income\x18\x07 \x01(\x01\x12\x0b\n\x03\x65ps\x18\x08 \x01(\x01\x12\x14\n\x0ctotal_assets\x18\t \x01(\x01\x12\x19\n\x11total_liabilities\x18\n \x01(\x01\x12\x1b\n\x13shareholders_equity\x18\x0b \x01(\x01\x12\x1c\n\x14\x62ook_value_per_share\x18\x0c \x01(\x01\x12\x1b\n\x13operating_cash_flow\x18\r \x01(\x01\x12\x16\n\x0e\x66ree_cash_flow\x18\x0e \x01(\x01\x12\r\n\x05\x63\x61pex\x18\x0f \x01(\x01\x12\x1a\n\x12shares_outstanding\x18\x10 \x01(\x03\x12\x16\n\x0e\x64\x65\x62t_to_equity\x18\x11 \x01(\x01\x12\x15\n\rcurrent_ratio\x18\x12 \x01(\x01\x12\x0b\n\x03roe\x18\x13 \x01(\x01\x12\x0b\n\x03roa\x18\x14 \x01(\x01\"@\n\x19GetFinancialReportRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_type\x18\x02 \x01(\t\"P\n\x1aGetFinancialReportResponse\x12\x32\n\x06report\x18\x01 \x01(\x0b\x32\".stock.informer.v1.FinancialReport\"U\n\x1aGetFinancialReportsRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x13\n\x0breport_type\x18\x02 \x01(\t\x12\x12\n\nyears_back\x18\x03 \x01(\x05\"R\n\x1bGetFinancialReportsResponse\x12\x33\n\x07reports\x18\x01 \x03(\x0b\x32\".stock.informer.v1.FinancialReport\"V\n\x1cTriggerDataCollectionRequest\x12\x0f\n\x07symbols\x18\x01 \x03(\t\x12\x11\n\tdata_type\x18\x02 \x01(\t\x12\x12\n\nstart_date\x18\x03 \x01(\t\"R\n\x1dTriggerDataCollectionResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"8\n\x12\x43reateStockRequest\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"9\n\x13\x43reateStockResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"H\n\x12UpdateStockRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x05stock\x18\x02 \x01(\x0b\x32\x13.stock.common.Stock\"9\n\x13UpdateStockResponse\x12\"\n\x05stock\x18\x01 \x01(\x0b\x32\x13.stock.common.Stock\"$\n\x12\x44\x65leteStockRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\"7\n\x13\x44\x65leteStockResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\xf1\x08\n\x0fInformerService\x12_\n\x0cGetStockInfo\x12&.stock.informer.v1.GetStockInfoRequest\x1a\'.stock.informer.v1.GetStockInfoResponse\x12Y\n\nListStocks\x12$.stock.informer.v1.ListStocksRequest\x1a%.stock.informer.v1.ListStocksResponse\x12\x65\n\x0e\x42\x61tchGetStocks\x12(.stock.informer.v1.BatchGetStocksRequest\x1a).stock.informer.v1.BatchGetStocksResponse\x12h\n\x0fGetPriceHistory\x12).stock.informer.v1.GetPriceHistoryRequest\x1a*.stock.informer.v1.GetPriceHistoryResponse\x12q\n\x12GetFinancialReport\x12,.stock.informer.v1.GetFinancialReportRequest\x1a-.stock.informer.v1.GetFinancialReportResponse\x12t\n\x13GetFinancialReports\x12-.stock.informer.v1.GetFinancialReportsRequest\x1a..stock.informer.v1.GetFinancialReportsResponse\x12\\\n\x0b\x43reateStock\x12%.stock.informer.v1.CreateStockRequest\x1a&.stock.informer.v1.CreateStockResponse\x12\\\n\x0bUpdateStock\x12%.stock.informer.v1.UpdateStockRequest\x1a&.stock.informer.v1.UpdateStockResponse\x12\\\n\x0b\x44\x65leteStock\x12%.stock.informer.v1.DeleteStockRequest\x1a&.stock.informer.v1.DeleteStockResponse\x12z\n\x15TriggerDataCollection\x12/.stock.informer.v1.TriggerDataCollectionRequest\x1a\x30.stock.informer.v1.TriggerDataCollectionResponse\x12R\n\x0bHealthCheck\x12 .stock.common.HealthCheckRequest\x1a!.stock.common.HealthCheckResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'informer_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_GETSTOCKINFOREQUEST']._serialized_start=57
-  _globals['_GETSTOCKINFOREQUEST']._serialized_end=94
-  _globals['_GETSTOCKINFORESPONSE']._serialized_start=96
-  _globals['_GETSTOCKINFORESPONSE']._serialized_end=154
-  _globals['_LISTSTOCKSREQUEST']._serialized_start=157
-  _globals['_LISTSTOCKSREQUEST']._serialized_end=296
-  _globals['_LISTSTOCKSRESPONSE']._serialized_start=298
-  _globals['_LISTSTOCKSRESPONSE']._serialized_end=409
-  _globals['_BATCHGETSTOCKSREQUEST']._serialized_start=411
-  _globals['_BATCHGETSTOCKSREQUEST']._serialized_end=451
-  _globals['_BATCHGETSTOCKSRESPONSE']._serialized_start=453
-  _globals['_BATCHGETSTOCKSRESPONSE']._serialized_end=533
-  _globals['_GETPRICEHISTORYREQUEST']._serialized_start=535
-  _globals['_GETPRICEHISTORYREQUEST']._serialized_end=646
-  _globals['_GETPRICEHISTORYRESPONSE']._serialized_start=649
-  _globals['_GETPRICEHISTORYRESPONSE']._serialized_end=793
-  _globals['_FINANCIALREPORT']._serialized_start=796
-  _globals['_FINANCIALREPORT']._serialized_end=1246
-  _globals['_GETFINANCIALREPORTREQUEST']._serialized_start=1248
-  _globals['_GETFINANCIALREPORTREQUEST']._serialized_end=1312
-  _globals['_GETFINANCIALREPORTRESPONSE']._serialized_start=1314
-  _globals['_GETFINANCIALREPORTRESPONSE']._serialized_end=1394
-  _globals['_GETFINANCIALREPORTSREQUEST']._serialized_start=1396
-  _globals['_GETFINANCIALREPORTSREQUEST']._serialized_end=1481
-  _globals['_GETFINANCIALREPORTSRESPONSE']._serialized_start=1483
-  _globals['_GETFINANCIALREPORTSRESPONSE']._serialized_end=1565
-  _globals['_TRIGGERDATACOLLECTIONREQUEST']._serialized_start=1567
-  _globals['_TRIGGERDATACOLLECTIONREQUEST']._serialized_end=1653
-  _globals['_TRIGGERDATACOLLECTIONRESPONSE']._serialized_start=1655
-  _globals['_TRIGGERDATACOLLECTIONRESPONSE']._serialized_end=1737
-  _globals['_HEALTHCHECKREQUEST']._serialized_start=1739
-  _globals['_HEALTHCHECKREQUEST']._serialized_end=1759
-  _globals['_HEALTHCHECKRESPONSE']._serialized_start=1761
-  _globals['_HEALTHCHECKRESPONSE']._serialized_end=1831
-  _globals['_CREATESTOCKREQUEST']._serialized_start=1833
-  _globals['_CREATESTOCKREQUEST']._serialized_end=1889
-  _globals['_CREATESTOCKRESPONSE']._serialized_start=1891
-  _globals['_CREATESTOCKRESPONSE']._serialized_end=1948
-  _globals['_UPDATESTOCKREQUEST']._serialized_start=1950
-  _globals['_UPDATESTOCKREQUEST']._serialized_end=2022
-  _globals['_UPDATESTOCKRESPONSE']._serialized_start=2024
-  _globals['_UPDATESTOCKRESPONSE']._serialized_end=2081
-  _globals['_DELETESTOCKREQUEST']._serialized_start=2083
-  _globals['_DELETESTOCKREQUEST']._serialized_end=2119
-  _globals['_DELETESTOCKRESPONSE']._serialized_start=2121
-  _globals['_DELETESTOCKRESPONSE']._serialized_end=2176
-  _globals['_INFORMERSERVICE']._serialized_start=2179
-  _globals['_INFORMERSERVICE']._serialized_end=3326
+  _globals['_GETSTOCKINFOREQUEST']._serialized_start=78
+  _globals['_GETSTOCKINFOREQUEST']._serialized_end=115
+  _globals['_GETSTOCKINFORESPONSE']._serialized_start=117
+  _globals['_GETSTOCKINFORESPONSE']._serialized_end=175
+  _globals['_LISTSTOCKSREQUEST']._serialized_start=178
+  _globals['_LISTSTOCKSREQUEST']._serialized_end=317
+  _globals['_LISTSTOCKSRESPONSE']._serialized_start=319
+  _globals['_LISTSTOCKSRESPONSE']._serialized_end=430
+  _globals['_BATCHGETSTOCKSREQUEST']._serialized_start=432
+  _globals['_BATCHGETSTOCKSREQUEST']._serialized_end=472
+  _globals['_BATCHGETSTOCKSRESPONSE']._serialized_start=474
+  _globals['_BATCHGETSTOCKSRESPONSE']._serialized_end=554
+  _globals['_GETPRICEHISTORYREQUEST']._serialized_start=556
+  _globals['_GETPRICEHISTORYREQUEST']._serialized_end=667
+  _globals['_GETPRICEHISTORYRESPONSE']._serialized_start=670
+  _globals['_GETPRICEHISTORYRESPONSE']._serialized_end=814
+  _globals['_FINANCIALREPORT']._serialized_start=817
+  _globals['_FINANCIALREPORT']._serialized_end=1267
+  _globals['_GETFINANCIALREPORTREQUEST']._serialized_start=1269
+  _globals['_GETFINANCIALREPORTREQUEST']._serialized_end=1333
+  _globals['_GETFINANCIALREPORTRESPONSE']._serialized_start=1335
+  _globals['_GETFINANCIALREPORTRESPONSE']._serialized_end=1415
+  _globals['_GETFINANCIALREPORTSREQUEST']._serialized_start=1417
+  _globals['_GETFINANCIALREPORTSREQUEST']._serialized_end=1502
+  _globals['_GETFINANCIALREPORTSRESPONSE']._serialized_start=1504
+  _globals['_GETFINANCIALREPORTSRESPONSE']._serialized_end=1586
+  _globals['_TRIGGERDATACOLLECTIONREQUEST']._serialized_start=1588
+  _globals['_TRIGGERDATACOLLECTIONREQUEST']._serialized_end=1674
+  _globals['_TRIGGERDATACOLLECTIONRESPONSE']._serialized_start=1676
+  _globals['_TRIGGERDATACOLLECTIONRESPONSE']._serialized_end=1758
+  _globals['_CREATESTOCKREQUEST']._serialized_start=1760
+  _globals['_CREATESTOCKREQUEST']._serialized_end=1816
+  _globals['_CREATESTOCKRESPONSE']._serialized_start=1818
+  _globals['_CREATESTOCKRESPONSE']._serialized_end=1875
+  _globals['_UPDATESTOCKREQUEST']._serialized_start=1877
+  _globals['_UPDATESTOCKREQUEST']._serialized_end=1949
+  _globals['_UPDATESTOCKRESPONSE']._serialized_start=1951
+  _globals['_UPDATESTOCKRESPONSE']._serialized_end=2008
+  _globals['_DELETESTOCKREQUEST']._serialized_start=2010
+  _globals['_DELETESTOCKREQUEST']._serialized_end=2046
+  _globals['_DELETESTOCKRESPONSE']._serialized_start=2048
+  _globals['_DELETESTOCKRESPONSE']._serialized_end=2103
+  _globals['_INFORMERSERVICE']._serialized_start=2106
+  _globals['_INFORMERSERVICE']._serialized_end=3243
 # @@protoc_insertion_point(module_scope)

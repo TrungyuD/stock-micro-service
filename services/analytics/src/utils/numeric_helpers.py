@@ -1,8 +1,10 @@
 """
 numeric_helpers.py — Shared numeric casting and safe division utilities.
-Used by valuation_calculator, proto_mappers, and screening_helpers.
+Used by valuation_calculator, proto_mappers, screening_helpers, and repositories.
 """
 from typing import Any
+
+import numpy as np
 
 
 def safe_float(v: Any) -> float | None:
@@ -42,3 +44,16 @@ def safe_float_or_zero(v: Any) -> float:
         return float(v)
     except (TypeError, ValueError):
         return 0.0
+
+
+def to_native(v: Any) -> Any:
+    """Convert numpy scalars to native Python types for psycopg2 compatibility."""
+    if isinstance(v, np.bool_):
+        return bool(v)
+    if isinstance(v, np.integer):
+        return int(v)
+    if isinstance(v, np.floating):
+        return float(v)
+    if isinstance(v, np.ndarray):
+        return v.tolist()
+    return v
