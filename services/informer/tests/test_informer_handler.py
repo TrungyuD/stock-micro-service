@@ -4,21 +4,22 @@ from unittest.mock import MagicMock, patch
 import grpc
 import pandas as pd
 
-from handlers.informer_handler import InformerHandler, _dict_to_stock, _dict_to_financial_report
+from handlers.informer_handler import InformerHandler, _dict_to_financial_report
+from mappers.stock_mapper import dict_to_stock
 
 
 class TestDictToStock:
-    """_dict_to_stock converts a DB row dict to a proto Stock message."""
+    """dict_to_stock converts a DB row dict to a proto Stock message."""
 
     def test_full_row(self, sample_stock_metadata):
-        stock = _dict_to_stock(sample_stock_metadata)
+        stock = dict_to_stock(sample_stock_metadata)
         assert stock.symbol == "AAPL"
         assert stock.name == "Apple Inc."
         assert stock.sector == "Technology"
         assert stock.market_cap == 3000000000000
 
     def test_missing_fields_default(self):
-        stock = _dict_to_stock({})
+        stock = dict_to_stock({})
         assert stock.symbol == ""
         assert stock.id == 0
         assert stock.is_active is True
@@ -112,6 +113,7 @@ class TestInformerHandlerListStocks:
         request.search = ""
         request.exchange = ""
         request.sector = ""
+        request.country = ""
         request.pagination.page = 1
         request.pagination.page_size = 20
 

@@ -10,6 +10,9 @@ describe('StocksService', () => {
     BatchGetStocks: jest.fn(),
     GetPriceHistory: jest.fn(),
     GetFinancialReports: jest.fn(),
+    CreateStock: jest.fn(),
+    UpdateStock: jest.fn(),
+    DeleteStock: jest.fn(),
     HealthCheck: jest.fn(),
   };
 
@@ -57,21 +60,72 @@ describe('StocksService', () => {
         exchange: '',
         sector: '',
         search: '',
+        country: '',
         pagination: { page: 1, page_size: 20 },
       });
     });
   });
 
   describe('batchGetStocks', () => {
-    it('should call gRPC BatchGetStocks with symbols', async () => {
+    it('should normalize symbols to uppercase and call gRPC', async () => {
       const mockResponse = { stocks: [], not_found: [] };
       mockGrpcService.BatchGetStocks.mockReturnValue(of(mockResponse));
 
-      const result = await service.batchGetStocks(['AAPL', 'MSFT']);
+      const result = await service.batchGetStocks(['aapl', ' msft ']);
       expect(result).toEqual(mockResponse);
       expect(mockGrpcService.BatchGetStocks).toHaveBeenCalledWith({
         symbols: ['AAPL', 'MSFT'],
       });
+    });
+  });
+
+  describe('listStocks with country', () => {
+    it('should pass country filter to gRPC ListStocks', async () => {
+      const mockResponse = { stocks: [], pagination: { total_count: 0 } };
+      mockGrpcService.ListStocks.mockReturnValue(of(mockResponse));
+
+      await service.listStocks({ country: 'VN', page: 1, pageSize: 20 });
+      expect(mockGrpcService.ListStocks).toHaveBeenCalledWith(
+        expect.objectContaining({ country: 'VN' }),
+      );
+    });
+  });
+
+  describe('createStock', () => {
+    it('should call gRPC CreateStock with stock payload', async () => {
+      const mockResponse = { stock: { symbol: 'TEST', name: 'Test Inc.' } };
+      mockGrpcService.CreateStock.mockReturnValue(of(mockResponse));
+
+      const result = await service.createStock({ symbol: 'test', name: 'Test Inc.' });
+      expect(result.stock.symbol).toBe('TEST');
+      expect(mockGrpcService.CreateStock).toHaveBeenCalledWith({
+        stock: expect.objectContaining({ symbol: 'TEST', name: 'Test Inc.' }),
+      });
+    });
+  });
+
+  describe('updateStock', () => {
+    it('should call gRPC UpdateStock with symbol and partial fields', async () => {
+      const mockResponse = { stock: { symbol: 'AAPL', name: 'Updated' } };
+      mockGrpcService.UpdateStock.mockReturnValue(of(mockResponse));
+
+      const result = await service.updateStock('aapl', { name: 'Updated' });
+      expect(result.stock.name).toBe('Updated');
+      expect(mockGrpcService.UpdateStock).toHaveBeenCalledWith({
+        symbol: 'AAPL',
+        stock: expect.objectContaining({ symbol: 'AAPL', name: 'Updated' }),
+      });
+    });
+  });
+
+  describe('deleteStock', () => {
+    it('should call gRPC DeleteStock and return success', async () => {
+      const mockResponse = { success: true, message: 'Stock AAPL deactivated' };
+      mockGrpcService.DeleteStock.mockReturnValue(of(mockResponse));
+
+      const result = await service.deleteStock('aapl');
+      expect(result.success).toBe(true);
+      expect(mockGrpcService.DeleteStock).toHaveBeenCalledWith({ symbol: 'AAPL' });
     });
   });
 

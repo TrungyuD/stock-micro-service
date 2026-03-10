@@ -10,6 +10,9 @@ describe('StocksController', () => {
     getStockInfo: jest.fn(),
     getPriceHistory: jest.fn(),
     getFinancialReports: jest.fn(),
+    createStock: jest.fn(),
+    updateStock: jest.fn(),
+    deleteStock: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -81,6 +84,41 @@ describe('StocksController', () => {
       const result = await controller.getFinancialReports('goog', {});
       expect(result).toEqual(mockResult);
       expect(mockStocksService.getFinancialReports).toHaveBeenCalledWith('GOOG', {});
+    });
+  });
+
+  describe('createStock', () => {
+    it('should delegate to stocksService.createStock', async () => {
+      const dto = { symbol: 'TEST', name: 'Test Inc.' };
+      const mockResult = { stock: { symbol: 'TEST', name: 'Test Inc.' } };
+      mockStocksService.createStock.mockResolvedValue(mockResult);
+
+      const result = await controller.createStock(dto as any);
+      expect(result).toEqual(mockResult);
+      expect(mockStocksService.createStock).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('updateStock', () => {
+    it('should delegate to stocksService.updateStock with symbol and dto', async () => {
+      const dto = { name: 'Updated Name' };
+      const mockResult = { stock: { symbol: 'AAPL', name: 'Updated Name' } };
+      mockStocksService.updateStock.mockResolvedValue(mockResult);
+
+      const result = await controller.updateStock('AAPL', dto as any);
+      expect(result).toEqual(mockResult);
+      expect(mockStocksService.updateStock).toHaveBeenCalledWith('AAPL', dto);
+    });
+  });
+
+  describe('deleteStock', () => {
+    it('should delegate to stocksService.deleteStock', async () => {
+      const mockResult = { success: true, message: 'Stock AAPL deactivated' };
+      mockStocksService.deleteStock.mockResolvedValue(mockResult);
+
+      const result = await controller.deleteStock('AAPL');
+      expect(result).toEqual(mockResult);
+      expect(mockStocksService.deleteStock).toHaveBeenCalledWith('AAPL');
     });
   });
 });

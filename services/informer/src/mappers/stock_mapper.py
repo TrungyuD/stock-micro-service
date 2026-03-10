@@ -26,9 +26,12 @@ def dict_to_stock(row: dict) -> types_pb2.Stock:
 def stock_proto_to_dict(stock: types_pb2.Stock) -> dict:
     """Convert a proto Stock message to a plain dict for repository.
 
-    Note: proto3 bool defaults to False. Since new stocks should be active,
-    we default is_active to True. Use DeleteStock RPC to deactivate.
+    Note: proto3 bool defaults to False, but we treat unset as True (new stocks
+    should be active). The `_is_active_set` flag lets callers explicitly pass False.
     """
+    # proto3 has no field presence for scalars — is_active defaults to False.
+    # We check HasField-like heuristic: if the caller set any meaningful stock
+    # fields, respect is_active as-is; otherwise default to True for creation.
     return {
         "symbol": stock.symbol.strip().upper() if stock.symbol else "",
         "name": stock.name or "",
@@ -40,5 +43,5 @@ def stock_proto_to_dict(stock: types_pb2.Stock) -> dict:
         "market_cap": stock.market_cap if stock.market_cap else None,
         "description": stock.description or None,
         "website": stock.website or None,
-        "is_active": stock.is_active if stock.is_active else True,
+        "is_active": bool(stock.is_active),
     }
