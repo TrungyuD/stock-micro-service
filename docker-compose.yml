@@ -16,7 +16,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-stock_password}
       POSTGRES_DB: ${DB_NAME:-stock_db}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-5311}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Mount entire init-db/ dir so 01-schema.sql and 02-seed.sql run in order
@@ -44,7 +44,7 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "${PGADMIN_PORT:-5312}:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:

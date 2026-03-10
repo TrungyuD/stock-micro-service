@@ -36,7 +36,7 @@ module.exports = {
       env: {
         PYTHONPATH: path.join(ROOT, 'services', 'informer', 'src'),
         GRPC_HOST: '0.0.0.0',
-        GRPC_PORT: 50051,
+        GRPC_PORT: 5302,
         LOG_LEVEL: 'INFO',
       },
       watch: false,
@@ -55,7 +55,7 @@ module.exports = {
       env: {
         PYTHONPATH: path.join(ROOT, 'services', 'analytics', 'src'),
         GRPC_HOST: '0.0.0.0',
-        GRPC_PORT: 50052,
+        GRPC_PORT: 5303,
         LOG_LEVEL: 'INFO',
       },
       watch: false,

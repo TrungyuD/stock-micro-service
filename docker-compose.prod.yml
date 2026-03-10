@@ -47,7 +47,7 @@ services:
       - stock_network
 
   # ---------------------------------------------------------------------------
-  # Informer gRPC service (port 50051)
+  # Informer gRPC service (port 5302)
   # ---------------------------------------------------------------------------
   informer:
     build:
@@ -56,7 +56,7 @@ services:
     container_name: stock_informer
     restart: always
     environment:
-      GRPC_PORT: 50051
+      GRPC_PORT: 5302
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER}
@@ -69,7 +69,7 @@ services:
       - stock_network
 
   # ---------------------------------------------------------------------------
-  # Analytics gRPC service (port 50052)
+  # Analytics gRPC service (port 5303)
   # ---------------------------------------------------------------------------
   analytics:
     build:
@@ -78,14 +78,14 @@ services:
     container_name: stock_analytics
     restart: always
     environment:
-      GRPC_PORT: 50052
+      GRPC_PORT: 5303
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       INFORMER_HOST: informer
-      INFORMER_PORT: 50051
+      INFORMER_PORT: 5302
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,7 +95,7 @@ services:
       - stock_network
 
   # ---------------------------------------------------------------------------
-  # NestJS API Gateway (port 3001)
+  # NestJS API Gateway (port 5301)
   # ---------------------------------------------------------------------------
   gateway:
     build:
@@ -105,19 +105,19 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      PORT: 3001
+      PORT: 5301
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      INFORMER_URL: informer:50051
-      ANALYTICS_URL: analytics:50052
+      INFORMER_URL: informer:5302
+      ANALYTICS_URL: analytics:5303
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "${GATEWAY_PORT:-5301}:3001"
+      - "${GATEWAY_PORT:-5301}:5301"
     depends_on:
       postgres:
         condition: service_healthy
@@ -131,7 +131,7 @@ services:
       - stock_network
 
   # ---------------------------------------------------------------------------
-  # Next.js Frontend (port 3000)
+  # Next.js Frontend (port 5300)
   # ---------------------------------------------------------------------------
   frontend:
     build:
@@ -141,9 +141,9 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://gateway:3001/api/v1
+      NEXT_PUBLIC_API_URL: http://gateway:5301/api/v1
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-5300}:3000"
     depends_on:
       gateway:
         condition: service_started
@@ -163,7 +163,7 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "${PGADMIN_PORT:-5312}:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
