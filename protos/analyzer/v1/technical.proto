@@ -1,0 +1,89 @@
+syntax = "proto3";
+package stock.analyzer.v1;
+option go_package = "stock/analyzer/v1";
+
+// TechnicalAnalysisService — Technical indicator calculations.
+service TechnicalAnalysisService {
+  // Get all technical indicators for a symbol. Deadline: 10s.
+  rpc GetTechnicalIndicators (GetTechnicalIndicatorsRequest) returns (TechnicalIndicatorsResponse);
+  // Get specific indicators by name. Deadline: 10s.
+  rpc GetMultipleIndicators (GetMultipleIndicatorsRequest) returns (MultipleIndicatorsResponse);
+  // Batch get indicators for multiple symbols. Max 20. Deadline: 30s.
+  rpc GetIndicatorBatch (GetIndicatorBatchRequest) returns (IndicatorBatchResponse);
+}
+
+// --- Indicator sub-messages ---
+
+message RSI {
+  int32 period = 1;              // Default 14
+  double value = 2;              // 0-100
+  string signal = 3;             // "Overbought", "Oversold", "Neutral"
+}
+
+message MovingAverages {
+  double sma_20 = 1;
+  double sma_50 = 2;
+  double sma_200 = 3;
+  double ema_20 = 4;
+  double ema_50 = 5;
+  string trend_signal = 6;       // "Bullish", "Bearish", "Neutral"
+}
+
+message MACDIndicator {
+  double macd_line = 1;
+  double signal_line = 2;
+  double histogram = 3;
+  string signal = 4;             // "Bullish", "Bearish"
+}
+
+message BollingerBands {
+  double upper_band = 1;
+  double middle_band = 2;
+  double lower_band = 3;
+  double band_width = 4;
+  double percent_b = 5;          // Position within bands (0-1)
+}
+
+message TechnicalIndicators {
+  string symbol = 1;
+  RSI rsi = 2;
+  MovingAverages moving_averages = 3;
+  MACDIndicator macd = 4;
+  BollingerBands bollinger_bands = 5;
+  string overall_signal = 6;     // "Strong Buy", "Buy", "Neutral", "Sell", "Strong Sell"
+  int32 buy_signals = 7;
+  int32 sell_signals = 8;
+  string calculated_at = 9;
+}
+
+// --- Request/Response ---
+
+message GetTechnicalIndicatorsRequest {
+  string symbol = 1;
+  string timeframe = 2;          // "1d", "1wk" (default "1d")
+}
+
+message TechnicalIndicatorsResponse {
+  TechnicalIndicators indicators = 1;
+}
+
+message GetMultipleIndicatorsRequest {
+  string symbol = 1;
+  repeated string indicator_names = 2;  // "rsi", "macd", "bollinger", "moving_averages"
+  string timeframe = 3;
+}
+
+message MultipleIndicatorsResponse {
+  string symbol = 1;
+  TechnicalIndicators indicators = 2;   // Only requested fields populated
+}
+
+message GetIndicatorBatchRequest {
+  repeated string symbols = 1;   // Max 20
+  string timeframe = 2;
+}
+
+message IndicatorBatchResponse {
+  repeated TechnicalIndicators results = 1;
+  repeated string failed_symbols = 2;
+}

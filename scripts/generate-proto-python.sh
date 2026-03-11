@@ -22,57 +22,103 @@ echo "Informer out : $INFORMER_OUT"
 echo "Analytics out: $ANALYTICS_OUT"
 echo ""
 
-# Clean previous output
+# Clean and recreate output dirs
 rm -rf "$INFORMER_OUT" "$ANALYTICS_OUT"
 mkdir -p "$INFORMER_OUT" "$ANALYTICS_OUT"
 
-# Generate Informer stubs (pb2, grpc, pyi)
-echo "→ Generating Informer service stubs..."
-python3 -m grpc_tools.protoc \
-  -I"$PROTO_DIR" \
-  --python_out="$INFORMER_OUT" \
-  --grpc_python_out="$INFORMER_OUT" \
-  --pyi_out="$INFORMER_OUT" \
-  "$PROTO_DIR/common/types.proto" \
-  "$PROTO_DIR/common/health.proto" \
-  "$PROTO_DIR/informer.proto"
+# ---------------------------------------------------------------------------
+# Helper: create __init__.py files at every package level for a given base dir
+# ---------------------------------------------------------------------------
+init_packages() {
+  local base="$1"
+  touch "$base/__init__.py"
+  touch "$base/common/__init__.py"
+  mkdir -p "$base/informer/v1" && touch "$base/informer/__init__.py" "$base/informer/v1/__init__.py"
+  mkdir -p "$base/analyzer/v1" && touch "$base/analyzer/__init__.py" "$base/analyzer/v1/__init__.py"
+}
 
-# Generate Analytics stubs (pb2, grpc, pyi)
-echo "→ Generating Analytics service stubs..."
-python3 -m grpc_tools.protoc \
-  -I"$PROTO_DIR" \
-  --python_out="$ANALYTICS_OUT" \
-  --grpc_python_out="$ANALYTICS_OUT" \
-  --pyi_out="$ANALYTICS_OUT" \
-  "$PROTO_DIR/common/types.proto" \
-  "$PROTO_DIR/common/health.proto" \
-  "$PROTO_DIR/analytics.proto"
+# ---------------------------------------------------------------------------
+# Legacy stubs — keep until Phase 3+4+5 migration completes
+# ---------------------------------------------------------------------------
+echo "→ Generating legacy Informer stubs..."
+python3 -m grpc_tools.protoc -I"$PROTO_DIR" \
+  --python_out="$INFORMER_OUT" --grpc_python_out="$INFORMER_OUT" --pyi_out="$INFORMER_OUT" \
+  "$PROTO_DIR/common/types.proto" "$PROTO_DIR/common/health.proto" "$PROTO_DIR/informer.proto"
 
-# Create __init__.py so generated dirs are importable packages
-touch "$INFORMER_OUT/__init__.py"
-touch "$INFORMER_OUT/common/__init__.py" 2>/dev/null || true
-touch "$ANALYTICS_OUT/__init__.py"
-touch "$ANALYTICS_OUT/common/__init__.py" 2>/dev/null || true
+echo "→ Generating legacy Analytics stubs..."
+python3 -m grpc_tools.protoc -I"$PROTO_DIR" \
+  --python_out="$ANALYTICS_OUT" --grpc_python_out="$ANALYTICS_OUT" --pyi_out="$ANALYTICS_OUT" \
+  "$PROTO_DIR/common/types.proto" "$PROTO_DIR/common/health.proto" "$PROTO_DIR/analytics.proto"
 
-# Fix relative imports: protoc generates bare imports that don't work
-# when the generated dir is used as a Python package.
-# 1. "from common import ..." → "from generated.common import ..."
-# 2. "import informer_pb2" → "from generated import informer_pb2"
-# 3. "import analytics_pb2" → "from generated import analytics_pb2"
+# ---------------------------------------------------------------------------
+# New versioned stubs — common, health, informer/v1
+# ---------------------------------------------------------------------------
+echo "→ Generating new Informer v1 stubs..."
+python3 -m grpc_tools.protoc -I"$PROTO_DIR" \
+  --python_out="$INFORMER_OUT" --grpc_python_out="$INFORMER_OUT" --pyi_out="$INFORMER_OUT" \
+  "$PROTO_DIR/common/pagination.proto" \
+  "$PROTO_DIR/common/timestamp.proto" \
+  "$PROTO_DIR/common/error.proto" \
+  "$PROTO_DIR/health.proto" \
+  "$PROTO_DIR/informer/v1/stock.proto" \
+  "$PROTO_DIR/informer/v1/price.proto" \
+  "$PROTO_DIR/informer/v1/financial.proto"
+
+# New versioned stubs — common, health, analyzer/v1
+echo "→ Generating new Analytics v1 stubs..."
+python3 -m grpc_tools.protoc -I"$PROTO_DIR" \
+  --python_out="$ANALYTICS_OUT" --grpc_python_out="$ANALYTICS_OUT" --pyi_out="$ANALYTICS_OUT" \
+  "$PROTO_DIR/common/pagination.proto" \
+  "$PROTO_DIR/common/timestamp.proto" \
+  "$PROTO_DIR/common/error.proto" \
+  "$PROTO_DIR/health.proto" \
+  "$PROTO_DIR/analyzer/v1/technical.proto" \
+  "$PROTO_DIR/analyzer/v1/fundamental.proto" \
+  "$PROTO_DIR/analyzer/v1/screening.proto" \
+  "$PROTO_DIR/analyzer/v1/scoring.proto"
+
+# ---------------------------------------------------------------------------
+# Ensure __init__.py at every package level
+# ---------------------------------------------------------------------------
+init_packages "$INFORMER_OUT"
+init_packages "$ANALYTICS_OUT"
+
+# ---------------------------------------------------------------------------
+# Fix imports: protoc generates bare imports; rewrite to be package-relative.
+# Patterns:
+#   from common import ...       → from generated.common import ...
+#   from informer.v1 import ...  → from generated.informer.v1 import ...
+#   from analyzer.v1 import ...  → from generated.analyzer.v1 import ...
+#   ^import health_pb2           → from generated import health_pb2
+# ---------------------------------------------------------------------------
 echo "→ Fixing imports in generated files..."
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS sed requires '' after -i
-  find "$INFORMER_OUT" -name "*.py" -o -name "*.pyi" | xargs sed -i '' 's/from common/from generated.common/g'
-  find "$INFORMER_OUT" -name "*.py" | xargs sed -i '' 's/^import informer_pb2/from generated import informer_pb2/g'
-  find "$ANALYTICS_OUT" -name "*.py" -o -name "*.pyi" | xargs sed -i '' 's/from common/from generated.common/g'
-  find "$ANALYTICS_OUT" -name "*.py" | xargs sed -i '' 's/^import analytics_pb2/from generated import analytics_pb2/g'
-else
-  # Linux sed
-  find "$INFORMER_OUT" -name "*.py" -o -name "*.pyi" | xargs sed -i 's/from common/from generated.common/g'
-  find "$INFORMER_OUT" -name "*.py" | xargs sed -i 's/^import informer_pb2/from generated import informer_pb2/g'
-  find "$ANALYTICS_OUT" -name "*.py" -o -name "*.pyi" | xargs sed -i 's/from common/from generated.common/g'
-  find "$ANALYTICS_OUT" -name "*.py" | xargs sed -i 's/^import analytics_pb2/from generated import analytics_pb2/g'
-fi
+fix_imports() {
+  local dir="$1"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    find "$dir" \( -name "*.py" -o -name "*.pyi" \) \
+      -exec sed -i '' \
+        -e 's/^from common /from generated.common /g' \
+        -e 's/^from informer\.v1 /from generated.informer.v1 /g' \
+        -e 's/^from analyzer\.v1 /from generated.analyzer.v1 /g' \
+        -e 's/^import health_pb2/from generated import health_pb2/g' \
+        -e 's/^import informer_pb2/from generated import informer_pb2/g' \
+        -e 's/^import analytics_pb2/from generated import analytics_pb2/g' \
+      {} +
+  else
+    find "$dir" \( -name "*.py" -o -name "*.pyi" \) \
+      -exec sed -i \
+        -e 's/^from common /from generated.common /g' \
+        -e 's/^from informer\.v1 /from generated.informer.v1 /g' \
+        -e 's/^from analyzer\.v1 /from generated.analyzer.v1 /g' \
+        -e 's/^import health_pb2/from generated import health_pb2/g' \
+        -e 's/^import informer_pb2/from generated import informer_pb2/g' \
+        -e 's/^import analytics_pb2/from generated import analytics_pb2/g' \
+      {} +
+  fi
+}
+
+fix_imports "$INFORMER_OUT"
+fix_imports "$ANALYTICS_OUT"
 
 echo ""
 echo "=== Done! ==="
@@ -80,4 +126,4 @@ echo "Informer stubs : $INFORMER_OUT"
 echo "Analytics stubs: $ANALYTICS_OUT"
 echo ""
 echo "Generated files:"
-find "$INFORMER_OUT" "$ANALYTICS_OUT" -type f -name "*.py" -o -name "*.pyi" | sort
+find "$INFORMER_OUT" "$ANALYTICS_OUT" -type f \( -name "*.py" -o -name "*.pyi" \) | sort

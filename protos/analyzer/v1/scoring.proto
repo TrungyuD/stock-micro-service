@@ -1,0 +1,59 @@
+syntax = "proto3";
+package stock.analyzer.v1;
+option go_package = "stock/analyzer/v1";
+
+// ScoringService — Composite stock scoring and recommendations.
+service ScoringService {
+  // Get composite score for a single symbol. Deadline: 10s.
+  rpc GetScore (GetScoreRequest) returns (ScoreResponse);
+  // Batch scores for multiple symbols. Max 50. Deadline: 30s.
+  rpc GetBatchScores (GetBatchScoresRequest) returns (BatchScoreResponse);
+  // Get buy/hold/sell recommendation. Deadline: 15s.
+  rpc GetRecommendation (GetRecommendationRequest) returns (RecommendationResponse);
+}
+
+// Composite score combining technical + fundamental analysis
+message StockScore {
+  string symbol = 1;
+  double technical_score = 2;     // 0-100 based on indicator signals
+  double valuation_score = 3;     // 0-100 based on valuation metrics
+  double overall_score = 4;       // Weighted composite (0-100)
+  string strategy = 5;            // Strategy used: "balanced", "growth", "value", "momentum"
+  string calculated_at = 6;
+}
+
+message GetScoreRequest {
+  string symbol = 1;
+  string strategy = 2;            // "balanced" (default), "growth", "value", "momentum"
+}
+
+message ScoreResponse {
+  StockScore score = 1;
+}
+
+message GetBatchScoresRequest {
+  repeated string symbols = 1;    // Max 50
+  string strategy = 2;
+}
+
+message BatchScoreResponse {
+  repeated StockScore scores = 1;
+  repeated string failed_symbols = 2;
+}
+
+message Recommendation {
+  string symbol = 1;
+  string action = 2;              // "Strong Buy", "Buy", "Hold", "Sell", "Strong Sell"
+  double confidence = 3;          // 0-100
+  string rationale = 4;           // Brief explanation
+  StockScore score = 5;
+  string generated_at = 6;
+}
+
+message GetRecommendationRequest {
+  string symbol = 1;
+}
+
+message RecommendationResponse {
+  Recommendation recommendation = 1;
+}

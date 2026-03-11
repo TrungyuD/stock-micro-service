@@ -5,12 +5,17 @@ Keeps _passes_*_criteria logic separate from the main handler.
 proto3 convention: numeric criteria fields default to 0.0 when not set by the
 caller.  We treat 0.0 as "no filter applied" throughout this module because
 real PE/PEG/dividend values of exactly 0.0 are meaningless as filter bounds.
+
+NOTE: Uses duck-typed `criteria` parameter (Any) so this module works with both
+legacy analytics_pb2.ScreeningCriteria and v1 screening_pb2.ScreeningCriteria
+without importing either — avoiding protobuf descriptor pool collisions.
 """
-from generated import analytics_pb2
+from typing import Any
+
 from utils.numeric_helpers import safe_float_or_zero
 
 
-def passes_valuation_criteria(row: dict, c: analytics_pb2.ScreeningCriteria) -> bool:
+def passes_valuation_criteria(row: dict, c: Any) -> bool:
     """
     Return True if the valuation row satisfies PE/PEG/dividend criteria.
 
@@ -39,7 +44,7 @@ def passes_valuation_criteria(row: dict, c: analytics_pb2.ScreeningCriteria) -> 
     return True
 
 
-def passes_technical_criteria(ind_row: dict | None, c: analytics_pb2.ScreeningCriteria) -> bool:
+def passes_technical_criteria(ind_row: dict | None, c: Any) -> bool:
     """
     Return True if the indicator row satisfies RSI / trend criteria.
     Missing indicator data is treated as a pass (don't filter out uncalculated stocks).
@@ -62,15 +67,15 @@ def passes_technical_criteria(ind_row: dict | None, c: analytics_pb2.ScreeningCr
     return True
 
 
-def compute_match_score(val_row: dict, ind_row: dict | None, c: analytics_pb2.ScreeningCriteria) -> float:
+def compute_match_score(val_row: dict, ind_row: dict | None, c: Any) -> float:
     """Simple 0-100 match score: invert valuation_score (lower score = better value)."""
     val_score = safe_float_or_zero(val_row.get("valuation_score") or 50.0)
     return round(100.0 - val_score, 2)
 
 
 def sort_screened(
-    stocks: list[analytics_pb2.ScreenedStock], sort_by: str
-) -> list[analytics_pb2.ScreenedStock]:
+    stocks: list[Any], sort_by: str
+) -> list[Any]:
     """Sort a list of ScreenedStock protos by the requested field."""
     if sort_by == "pe_ratio":
         return sorted(stocks, key=lambda s: s.valuation.trailing_pe or 999)

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package stock.common;
+option go_package = "stock/common";
+
+// Thin date range wrapper — uses ISO 8601 strings matching existing convention.
+
+message DateRange {
+  string start_date = 1;  // ISO 8601: "2025-01-01"
+  string end_date = 2;    // ISO 8601: "2026-03-11"
+}

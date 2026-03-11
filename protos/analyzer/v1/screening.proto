@@ -1,0 +1,84 @@
+syntax = "proto3";
+package stock.analyzer.v1;
+option go_package = "stock/analyzer/v1";
+
+import "analyzer/v1/fundamental.proto";
+import "analyzer/v1/technical.proto";
+
+// ScreeningService — Stock screening, batch analysis, and preset filters.
+service ScreeningService {
+  // Screen stocks by criteria. Deadline: 30s.
+  rpc ScreenStocks (ScreenStocksRequest) returns (ScreenStocksResponse);
+  // Batch analysis for multiple symbols. Max 50. Deadline: 60s.
+  rpc BatchAnalysis (BatchAnalysisRequest) returns (BatchAnalysisResponse);
+  // Get preset screening templates. Deadline: 3s.
+  rpc GetPresetScreens (GetPresetScreensRequest) returns (PresetScreensResponse);
+  // Trigger recalculation (admin). Deadline: 30s.
+  rpc TriggerCalculation (TriggerCalculationRequest) returns (TriggerCalculationResponse);
+}
+
+message ScreeningCriteria {
+  double min_pe = 1;
+  double max_pe = 2;
+  double min_peg = 3;
+  double max_peg = 4;
+  double min_dividend_yield = 5;
+  double max_dividend_yield = 6;
+  bool rsi_oversold = 7;
+  bool rsi_overbought = 8;
+  string trend_direction = 9;     // "Bullish", "Bearish"
+  string sector = 10;
+  string country = 11;            // "US", "VN"
+}
+
+message ScreenStocksRequest {
+  ScreeningCriteria criteria = 1;
+  int32 limit = 2;                // Default 20
+  string sort_by = 3;             // "valuation_score", "pe_ratio", etc.
+}
+
+message ScreenedStock {
+  string symbol = 1;
+  string company_name = 2;
+  double current_price = 3;
+  double match_score = 4;
+  ValuationMetrics valuation = 5;
+  TechnicalIndicators technicals = 6;
+}
+
+message ScreenStocksResponse {
+  repeated ScreenedStock stocks = 1;
+  int32 total_matched = 2;
+}
+
+message BatchAnalysisRequest {
+  repeated string symbols = 1;    // Max 50
+}
+
+message BatchAnalysisResponse {
+  repeated StockAnalysis analyses = 1;
+  repeated string failed_symbols = 2;
+}
+
+message PresetScreen {
+  string id = 1;
+  string name = 2;                // e.g. "Value Stocks", "Growth Leaders"
+  string description = 3;
+  ScreeningCriteria criteria = 4;
+}
+
+message GetPresetScreensRequest {}
+
+message PresetScreensResponse {
+  repeated PresetScreen presets = 1;
+}
+
+message TriggerCalculationRequest {
+  repeated string symbols = 1;    // Empty = all active
+  string calculation_type = 2;    // "technicals", "valuation", "all"
+}
+
+message TriggerCalculationResponse {
+  bool accepted = 1;
+  string message = 2;
+}

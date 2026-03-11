@@ -5,7 +5,7 @@ import grpc
 import pandas as pd
 
 from handlers.informer_handler import InformerHandler, _dict_to_financial_report
-from mappers.stock_mapper import dict_to_stock
+from mappers.legacy_stock_mapper import dict_to_legacy_stock as dict_to_stock
 
 
 class TestDictToStock:

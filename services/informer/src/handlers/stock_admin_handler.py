@@ -8,7 +8,7 @@ import grpc
 
 from generated import informer_pb2
 from generated.common import types_pb2
-from mappers.stock_mapper import dict_to_stock, stock_proto_to_dict
+from mappers.legacy_stock_mapper import dict_to_legacy_stock as dict_to_stock, stock_legacy_proto_to_dict as stock_proto_to_dict
 from utils.validators import validate_symbol
 
 logger = logging.getLogger(__name__)

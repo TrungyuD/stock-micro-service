@@ -1,6 +1,8 @@
 /**
  * health.controller.ts — Health check endpoint that pings gRPC services and DB.
  * Returns aggregate health status of all connected services.
+ * Uses HealthService (stock.common package) registered on both Informer and Analytics servers.
+ * Method name changed from HealthCheck → Check per the new health.proto definition.
  */
 import { Controller, Get, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -8,8 +10,9 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom, Observable, timeout, catchError, of } from 'rxjs';
 import { DataSource } from 'typeorm';
 
+/** Matches health.proto HealthService (stock.common package) */
 interface HealthGrpcService {
-  HealthCheck(req: Record<string, never>): Observable<any>;
+  Check(req: Record<string, never>): Observable<any>;
 }
 
 @ApiTags('health')
@@ -26,10 +29,9 @@ export class HealthController implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.informerHealth =
-      this.informerClient.getService<HealthGrpcService>('InformerService');
-    this.analyticsHealth =
-      this.analyticsClient.getService<HealthGrpcService>('AnalyticsService');
+    // HealthService is registered under stock.common package on both servers
+    this.informerHealth = this.informerClient.getService<HealthGrpcService>('HealthService');
+    this.analyticsHealth = this.analyticsClient.getService<HealthGrpcService>('HealthService');
   }
 
   @Get()
@@ -51,11 +53,11 @@ export class HealthController implements OnModuleInit {
     };
   }
 
-  /** Ping a gRPC service with a 3-second timeout */
+  /** Ping a gRPC HealthService with a 3-second timeout */
   private async pingService(name: string, svc: HealthGrpcService) {
     try {
       const result = await lastValueFrom(
-        svc.HealthCheck({}).pipe(
+        svc.Check({}).pipe(
           timeout(3000),
           catchError((err) => of({ status: 'error', error: err.message })),
         ),

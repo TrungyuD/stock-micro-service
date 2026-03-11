@@ -1,13 +1,14 @@
 """
-stock_mapper.py — Proto ↔ dict converters for Stock messages.
-Single source of truth used by both informer_handler and stock_admin_handler.
+stock_mapper.py — Proto ↔ dict converters for v1 stock_pb2.Stock messages.
+Used by v1 handlers (stock_handler.py, etc.). Contains no legacy proto imports.
+For legacy types_pb2.Stock, see mappers/legacy_stock_mapper.py.
 """
-from generated.common import types_pb2
+from generated.informer.v1 import stock_pb2
 
 
-def dict_to_stock(row: dict) -> types_pb2.Stock:
-    """Convert a `stocks` table row dict to a proto Stock message."""
-    return types_pb2.Stock(
+def dict_to_stock(row: dict) -> stock_pb2.Stock:
+    """Convert a `stocks` table row dict to a v1 proto Stock message."""
+    return stock_pb2.Stock(
         id=row.get("id") or 0,
         symbol=row.get("symbol") or "",
         name=row.get("name") or "",
@@ -23,15 +24,8 @@ def dict_to_stock(row: dict) -> types_pb2.Stock:
     )
 
 
-def stock_proto_to_dict(stock: types_pb2.Stock) -> dict:
-    """Convert a proto Stock message to a plain dict for repository.
-
-    Note: proto3 bool defaults to False, but we treat unset as True (new stocks
-    should be active). The `_is_active_set` flag lets callers explicitly pass False.
-    """
-    # proto3 has no field presence for scalars — is_active defaults to False.
-    # We check HasField-like heuristic: if the caller set any meaningful stock
-    # fields, respect is_active as-is; otherwise default to True for creation.
+def stock_proto_to_dict(stock: stock_pb2.Stock) -> dict:
+    """Convert a v1 stock_pb2.Stock proto message to a plain dict for repository."""
     return {
         "symbol": stock.symbol.strip().upper() if stock.symbol else "",
         "name": stock.name or "",

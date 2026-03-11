@@ -1,6 +1,7 @@
 """
 server.py — Informer gRPC server entry point.
 Wires up all dependencies and starts the server with graceful shutdown.
+Registers v1 services: StockService, PriceService, FinancialService, HealthService.
 """
 import logging
 import os
@@ -15,13 +16,17 @@ import grpc
 
 from config import Settings
 from database import DatabasePool
-from handlers.informer_handler import InformerHandler
+from handlers.stock_handler import StockHandler
+from handlers.price_handler import PriceHandler
+from handlers.financial_handler import FinancialHandler
+from handlers.health_handler import HealthHandler
 from providers.hybrid_provider import HybridProvider
 from repositories.stock_repository import StockRepository
 from repositories.ohlcv_repository import OHLCVRepository
 from repositories.financial_report_repository import FinancialReportRepository
 from scheduler.data_collection_scheduler import DataCollectionScheduler
-from generated import informer_pb2_grpc
+from generated import health_pb2_grpc
+from generated.informer.v1 import stock_pb2_grpc, price_pb2_grpc, financial_pb2_grpc
 from utils.retry import retry_with_backoff
 
 # Configure structured logging before importing other local modules
@@ -62,8 +67,11 @@ def serve() -> None:
     provider.ohlcv_repo = ohlcv_repo
     provider.financial_repo = financial_repo
 
-    # ── Handler ───────────────────────────────────────────────────────────────
-    handler = InformerHandler(provider, stock_repo, ohlcv_repo, financial_repo)
+    # ── Handlers ─────────────────────────────────────────────────────────────
+    stock_handler = StockHandler(provider, stock_repo)
+    price_handler = PriceHandler(provider, ohlcv_repo)
+    financial_handler = FinancialHandler(provider, stock_repo, financial_repo)
+    health_handler = HealthHandler(stock_repo)
 
     # ── gRPC server ───────────────────────────────────────────────────────────
     server = grpc.server(
@@ -73,7 +81,13 @@ def serve() -> None:
             ("grpc.max_receive_message_length", 50 * 1024 * 1024),
         ],
     )
-    informer_pb2_grpc.add_InformerServiceServicer_to_server(handler, server)
+
+    # Register v1 services
+    stock_pb2_grpc.add_StockServiceServicer_to_server(stock_handler, server)
+    price_pb2_grpc.add_PriceServiceServicer_to_server(price_handler, server)
+    financial_pb2_grpc.add_FinancialServiceServicer_to_server(financial_handler, server)
+    health_pb2_grpc.add_HealthServiceServicer_to_server(health_handler, server)
+
     server.add_insecure_port(settings.grpc_address)
     server.start()
     logger.info("Informer gRPC server listening on %s", settings.grpc_address)
@@ -99,7 +113,7 @@ def serve() -> None:
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
-    logger.info("Informer service ready")
+    logger.info("Informer service ready — v1 services registered")
     server.wait_for_termination()
 
 

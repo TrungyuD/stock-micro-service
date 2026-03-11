@@ -1,0 +1,112 @@
+syntax = "proto3";
+package stock.informer.v1;
+option go_package = "stock/informer/v1";
+
+import "common/pagination.proto";
+import "common/error.proto";
+
+// StockService — Stock metadata CRUD and queries.
+service StockService {
+  // Get single stock by symbol. Deadline: 5s.
+  rpc GetStock (GetStockRequest) returns (GetStockResponse);
+  // List stocks with filters and pagination. Deadline: 10s.
+  rpc ListStocks (ListStocksRequest) returns (ListStocksResponse);
+  // Search stocks by name or symbol substring. Deadline: 5s.
+  rpc SearchStocks (SearchStocksRequest) returns (StockListResponse);
+  // Batch get stocks by IDs. Max 100 IDs. Deadline: 10s.
+  rpc GetStocksByIds (GetStocksByIdsRequest) returns (StockListResponse);
+  // Create a new stock entry (admin). Deadline: 5s.
+  rpc CreateStock (CreateStockRequest) returns (StockResponse);
+  // Update stock metadata (admin). Deadline: 5s.
+  rpc UpdateStock (UpdateStockRequest) returns (StockResponse);
+  // Soft-delete a stock (admin). Deadline: 5s.
+  rpc DeleteStock (DeleteStockRequest) returns (DeleteStockResponse);
+  // Trigger data collection job (admin). Deadline: 30s.
+  rpc TriggerDataCollection (TriggerDataCollectionRequest) returns (TriggerDataCollectionResponse);
+}
+
+// Core stock entity — moved from common/types.proto
+message Stock {
+  int32 id = 1;
+  string symbol = 2;          // e.g. "AAPL", "VNM.VN"
+  string name = 3;            // e.g. "Apple Inc."
+  string sector = 4;
+  string industry = 5;
+  string exchange = 6;        // e.g. "NASDAQ", "HOSE"
+  string country = 7;         // ISO 3166-1 alpha-2: "US", "VN"
+  string currency = 8;        // ISO 4217: "USD", "VND"
+  int64 market_cap = 9;
+  string description = 10;
+  string website = 11;
+  bool is_active = 12;
+}
+
+// --- Request/Response messages ---
+
+message GetStockRequest {
+  string symbol = 1;           // Required. Uppercased.
+}
+
+message GetStockResponse {
+  Stock stock = 1;
+}
+
+message ListStocksRequest {
+  string exchange = 1;         // Optional filter
+  string sector = 2;           // Optional filter
+  string search = 3;           // Optional search term
+  string country = 4;          // Optional: "US", "VN"
+  stock.common.PaginationRequest pagination = 5;
+}
+
+message ListStocksResponse {
+  repeated Stock stocks = 1;
+  stock.common.PaginationResponse pagination = 2;
+}
+
+message SearchStocksRequest {
+  string query = 1;            // Search term (symbol or name substring)
+  int32 limit = 2;             // Max results, default 20
+}
+
+message GetStocksByIdsRequest {
+  repeated int32 ids = 1;      // Max 100 stock IDs
+}
+
+message StockListResponse {
+  repeated Stock stocks = 1;
+}
+
+message CreateStockRequest {
+  Stock stock = 1;
+}
+
+message UpdateStockRequest {
+  string symbol = 1;           // Target stock symbol
+  Stock stock = 2;             // Updated fields
+}
+
+message StockResponse {
+  Stock stock = 1;
+}
+
+message DeleteStockRequest {
+  string symbol = 1;
+}
+
+message DeleteStockResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message TriggerDataCollectionRequest {
+  repeated string symbols = 1;  // Empty = all active stocks
+  string data_type = 2;         // "ohlcv", "financials", "metadata", "all"
+  string start_date = 3;        // For historical backfill
+}
+
+message TriggerDataCollectionResponse {
+  bool accepted = 1;
+  string job_id = 2;
+  string message = 3;
+}

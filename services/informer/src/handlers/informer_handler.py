@@ -15,7 +15,7 @@ from generated.common import types_pb2
 from generated.common import health_pb2
 from handlers import stock_admin_handler as _admin_mod
 from handlers import live_price_handler as _live_price_mod
-from mappers.stock_mapper import dict_to_stock
+from mappers.legacy_stock_mapper import dict_to_legacy_stock as dict_to_stock
 from utils.validators import validate_symbol
 
 logger = logging.getLogger(__name__)

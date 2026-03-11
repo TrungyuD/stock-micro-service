@@ -1,0 +1,81 @@
+syntax = "proto3";
+package stock.analyzer.v1;
+option go_package = "stock/analyzer/v1";
+
+import "analyzer/v1/technical.proto";
+
+// FundamentalAnalysisService — Valuation and combined analysis.
+service FundamentalAnalysisService {
+  // Get valuation metrics for a symbol. Deadline: 10s.
+  rpc GetValuationMetrics (GetValuationMetricsRequest) returns (ValuationMetricsResponse);
+  // Get combined stock analysis (valuation + technicals). Deadline: 15s.
+  rpc GetStockAnalysis (GetStockAnalysisRequest) returns (StockAnalysisResponse);
+  // Compare multiple stocks side-by-side. Max 10. Deadline: 30s.
+  rpc CompareStocks (CompareStocksRequest) returns (CompareStocksResponse);
+}
+
+message ValuationMetrics {
+  string symbol = 1;
+  double trailing_pe = 2;
+  double forward_pe = 3;
+  double current_eps = 4;
+  double price_to_book = 5;
+  double book_value_per_share = 6;
+  double peg_ratio = 7;
+  double earnings_growth_rate = 8;
+  double dividend_yield = 9;
+  double payout_ratio = 10;
+  double price_to_sales = 11;
+  double ev_to_ebitda = 12;
+  string valuation_signal = 13;   // "Undervalued", "Fair", "Overvalued"
+  double valuation_score = 14;    // 0-100
+  string calculated_at = 15;
+}
+
+message StockAnalysis {
+  string symbol = 1;
+  string company_name = 2;
+  double current_price = 3;
+  ValuationMetrics valuation = 4;
+  TechnicalIndicators technicals = 5;
+  string recommendation = 6;      // "Strong Buy" to "Strong Sell"
+  double confidence_score = 7;    // 0-100
+  string rationale = 8;
+  string analysis_timestamp = 9;
+}
+
+// --- Request/Response ---
+
+message GetValuationMetricsRequest {
+  string symbol = 1;
+}
+
+message ValuationMetricsResponse {
+  ValuationMetrics metrics = 1;
+}
+
+message GetStockAnalysisRequest {
+  string symbol = 1;
+  bool include_rationale = 2;
+}
+
+message StockAnalysisResponse {
+  StockAnalysis analysis = 1;
+}
+
+message CompareStocksRequest {
+  repeated string symbols = 1;   // Max 10
+}
+
+message StockComparison {
+  string symbol = 1;
+  string company_name = 2;
+  double current_price = 3;
+  ValuationMetrics valuation = 4;
+  TechnicalIndicators technicals = 5;
+}
+
+message CompareStocksResponse {
+  repeated StockComparison comparisons = 1;
+  repeated string failed_symbols = 2;
+}

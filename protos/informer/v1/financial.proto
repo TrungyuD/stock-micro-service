@@ -1,0 +1,132 @@
+syntax = "proto3";
+package stock.informer.v1;
+option go_package = "stock/informer/v1";
+
+// FinancialService — Financial report retrieval by type.
+service FinancialService {
+  // Get income statement data. Deadline: 10s.
+  rpc GetIncomeStatement (GetFinancialRequest) returns (IncomeStatementResponse);
+  // Get balance sheet data. Deadline: 10s.
+  rpc GetBalanceSheet (GetFinancialRequest) returns (BalanceSheetResponse);
+  // Get cash flow data. Deadline: 10s.
+  rpc GetCashFlow (GetFinancialRequest) returns (CashFlowResponse);
+  // Get combined financial summary (key metrics). Deadline: 10s.
+  rpc GetFinancialSummary (GetFinancialSummaryRequest) returns (FinancialSummaryResponse);
+  // Get historical financial reports (backward compat). Deadline: 15s.
+  rpc GetFinancialReports (GetFinancialReportsRequest) returns (GetFinancialReportsResponse);
+}
+
+// Shared request for single-type financial data
+message GetFinancialRequest {
+  string symbol = 1;
+  string period = 2;            // "annual" or "quarterly"
+  int32 years_back = 3;         // Default 5
+}
+
+// Income statement fields
+message IncomeStatement {
+  string report_date = 1;
+  string period = 2;
+  double revenue = 3;
+  double gross_profit = 4;
+  double operating_income = 5;
+  double net_income = 6;
+  double eps = 7;
+}
+
+message IncomeStatementResponse {
+  string symbol = 1;
+  repeated IncomeStatement statements = 2;
+}
+
+// Balance sheet fields
+message BalanceSheet {
+  string report_date = 1;
+  string period = 2;
+  double total_assets = 3;
+  double total_liabilities = 4;
+  double shareholders_equity = 5;
+  double book_value_per_share = 6;
+  double debt_to_equity = 7;
+  double current_ratio = 8;
+}
+
+message BalanceSheetResponse {
+  string symbol = 1;
+  repeated BalanceSheet sheets = 2;
+}
+
+// Cash flow fields
+message CashFlowStatement {
+  string report_date = 1;
+  string period = 2;
+  double operating_cash_flow = 3;
+  double free_cash_flow = 4;
+  double capex = 5;
+}
+
+message CashFlowResponse {
+  string symbol = 1;
+  repeated CashFlowStatement flows = 2;
+}
+
+// Combined summary of key financial metrics
+message FinancialSummary {
+  string symbol = 1;
+  double revenue = 2;
+  double net_income = 3;
+  double eps = 4;
+  double roe = 5;
+  double roa = 6;
+  double debt_to_equity = 7;
+  double current_ratio = 8;
+  double free_cash_flow = 9;
+  int64 shares_outstanding = 10;
+  string latest_report_date = 11;
+}
+
+message GetFinancialSummaryRequest {
+  string symbol = 1;
+}
+
+message FinancialSummaryResponse {
+  FinancialSummary summary = 1;
+}
+
+// Historical reports — backward-compatible monolithic message
+message FinancialReport {
+  string symbol = 1;
+  string report_date = 2;
+  string report_type = 3;        // "Annual" or "Quarterly"
+  // Income
+  double revenue = 4;
+  double gross_profit = 5;
+  double operating_income = 6;
+  double net_income = 7;
+  double eps = 8;
+  // Balance
+  double total_assets = 9;
+  double total_liabilities = 10;
+  double shareholders_equity = 11;
+  double book_value_per_share = 12;
+  // Cash flow
+  double operating_cash_flow = 13;
+  double free_cash_flow = 14;
+  double capex = 15;
+  // Metrics
+  int64 shares_outstanding = 16;
+  double debt_to_equity = 17;
+  double current_ratio = 18;
+  double roe = 19;
+  double roa = 20;
+}
+
+message GetFinancialReportsRequest {
+  string symbol = 1;
+  string report_type = 2;        // Optional filter: "Annual" or "Quarterly"
+  int32 years_back = 3;          // Default 5
+}
+
+message GetFinancialReportsResponse {
+  repeated FinancialReport reports = 1;
+}

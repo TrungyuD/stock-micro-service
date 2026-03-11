@@ -1,0 +1,11 @@
+syntax = "proto3";
+package stock.common;
+option go_package = "stock/common";
+
+// Structured error detail for consistent error responses across services.
+
+message ErrorDetail {
+  string code = 1;     // Machine-readable: "SYMBOL_NOT_FOUND", "RATE_LIMIT_EXCEEDED"
+  string message = 2;  // Human-readable description
+  string field = 3;    // Optional: which request field caused the error
+}

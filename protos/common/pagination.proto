@@ -1,0 +1,17 @@
+syntax = "proto3";
+package stock.common;
+option go_package = "stock/common";
+
+// Shared pagination types used across all services.
+
+message PaginationRequest {
+  int32 page = 1;       // 1-indexed page number
+  int32 page_size = 2;  // Default 20, max 100
+}
+
+message PaginationResponse {
+  int32 total_count = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}

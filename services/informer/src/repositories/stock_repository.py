@@ -54,6 +54,22 @@ class StockRepository:
             fetch="one",
         )
 
+    def get_by_ids(self, ids: list[int]) -> list[dict]:
+        """Return stock rows matching any of the given primary-key IDs (batch query)."""
+        if not ids:
+            return []
+        return self._db.execute(
+            """
+            SELECT id, symbol, name, sector, industry, exchange,
+                   country, currency, market_cap, description, website, is_active,
+                   created_at, updated_at
+              FROM stocks
+             WHERE id = ANY(%s)
+            """,
+            (ids,),
+            fetch="all",
+        ) or []
+
     def get_all_active(self) -> list[dict]:
         """Return all stocks where is_active = TRUE."""
         return self._db.execute(
