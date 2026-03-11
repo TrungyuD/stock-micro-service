@@ -14,6 +14,7 @@ describe('StocksService', () => {
     UpdateStock: jest.fn(),
     DeleteStock: jest.fn(),
     HealthCheck: jest.fn(),
+    GetLivePrice: jest.fn(),
   };
 
   const mockClient = {
@@ -153,6 +154,17 @@ describe('StocksService', () => {
 
       const result = await service.healthCheck();
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('getLivePrice', () => {
+    it('should call gRPC GetLivePrice with symbols array', async () => {
+      const mockResponse = { prices: [{ symbol: 'AAPL', last_price: 175.5 }] };
+      mockGrpcService.GetLivePrice.mockReturnValue(of(mockResponse));
+
+      const result = await service.getLivePrice(['AAPL', 'MSFT']);
+      expect(result).toEqual(mockResponse);
+      expect(mockGrpcService.GetLivePrice).toHaveBeenCalledWith({ symbols: ['AAPL', 'MSFT'] });
     });
   });
 });

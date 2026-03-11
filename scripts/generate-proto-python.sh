@@ -34,6 +34,7 @@ python3 -m grpc_tools.protoc \
   --grpc_python_out="$INFORMER_OUT" \
   --pyi_out="$INFORMER_OUT" \
   "$PROTO_DIR/common/types.proto" \
+  "$PROTO_DIR/common/health.proto" \
   "$PROTO_DIR/informer.proto"
 
 # Generate Analytics stubs (pb2, grpc, pyi)
@@ -44,6 +45,7 @@ python3 -m grpc_tools.protoc \
   --grpc_python_out="$ANALYTICS_OUT" \
   --pyi_out="$ANALYTICS_OUT" \
   "$PROTO_DIR/common/types.proto" \
+  "$PROTO_DIR/common/health.proto" \
   "$PROTO_DIR/analytics.proto"
 
 # Create __init__.py so generated dirs are importable packages

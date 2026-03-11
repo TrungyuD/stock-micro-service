@@ -22,6 +22,7 @@ interface InformerGrpcService {
   UpdateStock(req: { symbol: string; stock: any }): Observable<any>;
   DeleteStock(req: { symbol: string }): Observable<any>;
   HealthCheck(req: Record<string, never>): Observable<any>;
+  GetLivePrice(req: { symbols: string[] }): Observable<any>;
 }
 
 /** Default gRPC call timeout in ms */
@@ -144,5 +145,10 @@ export class StocksService implements OnModuleInit {
     return this.call(
       this.informerService.DeleteStock({ symbol: symbol.toUpperCase() }),
     );
+  }
+
+  /** Get live prices for multiple symbols via Informer gRPC */
+  async getLivePrice(symbols: string[]) {
+    return this.call(this.informerService.GetLivePrice({ symbols }));
   }
 }

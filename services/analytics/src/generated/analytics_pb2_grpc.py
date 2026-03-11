@@ -3,8 +3,8 @@
 import grpc
 import warnings
 
-import analytics_pb2 as analytics__pb2
-from common import health_pb2 as common_dot_health__pb2
+from generated import analytics_pb2 as analytics__pb2
+from generated.common import health_pb2 as common_dot_health__pb2
 
 GRPC_GENERATED_VERSION = '1.68.0'
 GRPC_VERSION = grpc.__version__

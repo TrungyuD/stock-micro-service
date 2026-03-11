@@ -1,5 +1,5 @@
 """
-informer_handler.py — gRPC servicer implementing all 8 InformerService RPCs.
+informer_handler.py — gRPC servicer implementing all InformerService RPCs.
 Maps between proto messages and repository/provider data layer.
 """
 import logging
@@ -14,6 +14,7 @@ from generated import informer_pb2, informer_pb2_grpc
 from generated.common import types_pb2
 from generated.common import health_pb2
 from handlers import stock_admin_handler as _admin_mod
+from handlers import live_price_handler as _live_price_mod
 from mappers.stock_mapper import dict_to_stock
 from utils.validators import validate_symbol
 
@@ -170,6 +171,24 @@ class InformerHandler(informer_pb2_grpc.InformerServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(exc))
             return informer_pb2.GetPriceHistoryResponse()
+
+    # ─── GetLivePrice ─────────────────────────────────────────────────────────
+
+    def GetLivePrice(self, request, context):
+        """Return real-time price snapshot for up to 20 symbols via yfinance."""
+        symbols = list(request.symbols)
+        if not symbols:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("symbols list must not be empty")
+            return informer_pb2.GetLivePriceResponse()
+
+        try:
+            return _live_price_mod.get_live_prices(symbols)
+        except Exception as exc:
+            logger.exception("GetLivePrice failed")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(exc))
+            return informer_pb2.GetLivePriceResponse()
 
     # ─── GetFinancialReport ───────────────────────────────────────────────────
 

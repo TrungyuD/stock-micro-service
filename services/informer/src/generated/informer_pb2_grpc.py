@@ -3,8 +3,8 @@
 import grpc
 import warnings
 
-from common import health_pb2 as common_dot_health__pb2
-import informer_pb2 as informer__pb2
+from generated.common import health_pb2 as common_dot_health__pb2
+from generated import informer_pb2 as informer__pb2
 
 GRPC_GENERATED_VERSION = '1.68.0'
 GRPC_VERSION = grpc.__version__
@@ -58,6 +58,11 @@ class InformerServiceStub(object):
                 '/stock.informer.v1.InformerService/GetPriceHistory',
                 request_serializer=informer__pb2.GetPriceHistoryRequest.SerializeToString,
                 response_deserializer=informer__pb2.GetPriceHistoryResponse.FromString,
+                _registered_method=True)
+        self.GetLivePrice = channel.unary_unary(
+                '/stock.informer.v1.InformerService/GetLivePrice',
+                request_serializer=informer__pb2.GetLivePriceRequest.SerializeToString,
+                response_deserializer=informer__pb2.GetLivePriceResponse.FromString,
                 _registered_method=True)
         self.GetFinancialReport = channel.unary_unary(
                 '/stock.informer.v1.InformerService/GetFinancialReport',
@@ -124,6 +129,13 @@ class InformerServiceServicer(object):
 
     def GetPriceHistory(self, request, context):
         """OHLCV price history
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetLivePrice(self, request, context):
+        """Live price (real-time snapshot via yfinance fast_info)
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -197,6 +209,11 @@ def add_InformerServiceServicer_to_server(servicer, server):
                     servicer.GetPriceHistory,
                     request_deserializer=informer__pb2.GetPriceHistoryRequest.FromString,
                     response_serializer=informer__pb2.GetPriceHistoryResponse.SerializeToString,
+            ),
+            'GetLivePrice': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetLivePrice,
+                    request_deserializer=informer__pb2.GetLivePriceRequest.FromString,
+                    response_serializer=informer__pb2.GetLivePriceResponse.SerializeToString,
             ),
             'GetFinancialReport': grpc.unary_unary_rpc_method_handler(
                     servicer.GetFinancialReport,
@@ -346,6 +363,33 @@ class InformerService(object):
             '/stock.informer.v1.InformerService/GetPriceHistory',
             informer__pb2.GetPriceHistoryRequest.SerializeToString,
             informer__pb2.GetPriceHistoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetLivePrice(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/stock.informer.v1.InformerService/GetLivePrice',
+            informer__pb2.GetLivePriceRequest.SerializeToString,
+            informer__pb2.GetLivePriceResponse.FromString,
             options,
             channel_credentials,
             insecure,
