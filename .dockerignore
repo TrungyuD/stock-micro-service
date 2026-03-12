@@ -1,0 +1,17 @@
+node_modules
+.git
+*.md
+.env*
+coverage
+.vscode
+**/*.test.ts
+**/*.test.py
+**/*.spec.ts
+**/__pycache__
+**/.pytest_cache
+**/vitest.config.ts
+plans
+docs
+.claude
+**/logs
+**/.venv

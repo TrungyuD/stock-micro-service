@@ -99,8 +99,8 @@ services:
   # ---------------------------------------------------------------------------
   gateway:
     build:
-      context: ./gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: gateway/Dockerfile
     container_name: stock_gateway
     restart: always
     environment:
@@ -137,11 +137,14 @@ services:
     build:
       context: ../stock-app
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://gateway:5301/api/v1}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://gateway:5301}
     container_name: stock_frontend
     restart: always
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://gateway:5301/api/v1
+      HOSTNAME: "0.0.0.0"
     ports:
       - "${FRONTEND_PORT:-5300}:3000"
     depends_on:

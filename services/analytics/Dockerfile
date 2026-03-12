@@ -1,6 +1,6 @@
 # =============================================================================
 # Analytics gRPC service — multi-stage build
-# Stage 1: builder  — install deps + generate proto stubs
+# Stage 1: builder  — install deps + generate v1 proto stubs
 # Stage 2: runner   — slim production image
 # Build context: repo root  →  docker build -f services/analytics/Dockerfile .
 # =============================================================================
@@ -16,16 +16,36 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY services/analytics/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Generate proto stubs
+# Generate v1 proto stubs (common, health, analyzer/v1)
 COPY protos/ ./protos/
-RUN mkdir -p ./generated/common && \
-    python -m grpc_tools.protoc \
-        -I./protos \
-        --python_out=./generated \
-        --grpc_python_out=./generated \
-        ./protos/analytics.proto && \
-    touch ./generated/__init__.py && \
-    touch ./generated/common/__init__.py
+RUN mkdir -p ./generated/common \
+             ./generated/informer/v1 \
+             ./generated/analyzer/v1 && \
+    python -m grpc_tools.protoc -I./protos \
+        --python_out=./generated --grpc_python_out=./generated \
+        ./protos/common/pagination.proto \
+        ./protos/common/timestamp.proto \
+        ./protos/common/error.proto \
+        ./protos/health.proto \
+        ./protos/analyzer/v1/technical.proto \
+        ./protos/analyzer/v1/fundamental.proto \
+        ./protos/analyzer/v1/screening.proto \
+        ./protos/analyzer/v1/scoring.proto && \
+    # Create __init__.py at every package level
+    touch ./generated/__init__.py \
+          ./generated/common/__init__.py \
+          ./generated/informer/__init__.py \
+          ./generated/informer/v1/__init__.py \
+          ./generated/analyzer/__init__.py \
+          ./generated/analyzer/v1/__init__.py && \
+    # Fix imports: protoc generates bare imports; rewrite to package-relative
+    find ./generated \( -name "*.py" -o -name "*.pyi" \) \
+      -exec sed -i \
+        -e 's/^from common /from generated.common /g' \
+        -e 's/^from informer\.v1 /from generated.informer.v1 /g' \
+        -e 's/^from analyzer\.v1 /from generated.analyzer.v1 /g' \
+        -e 's/^import health_pb2/from generated import health_pb2/g' \
+      {} +
 
 # -----------------------------------------------------------------------------
 FROM python:3.11-slim AS runner
@@ -50,6 +70,6 @@ RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --ingroup appgroup appuser
 USER appuser
 
-EXPOSE 50052
+EXPOSE 5303
 
 CMD ["python", "src/server.py"]
