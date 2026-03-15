@@ -2,9 +2,9 @@
  * stocks.controller.ts — REST endpoints for stock data.
  * Proxies to Informer gRPC service via StocksService.
  */
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, Inject, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { CACHE_MANAGER, CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { StocksService } from './stocks.service';
 import { ListStocksQueryDto } from './dto/list-stocks-query.dto';
 import { GetPriceHistoryQueryDto } from './dto/get-price-history-query.dto';
@@ -19,7 +19,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @ApiTags('stocks')
 @Controller('stocks')
 export class StocksController {
-  constructor(private readonly stocksService: StocksService) {}
+  constructor(
+    private readonly stocksService: StocksService,
+    @Inject(CACHE_MANAGER) private readonly cache: { clear: () => Promise<void> },
+  ) {}
 
   @Get()
   @UseInterceptors(CacheInterceptor)
@@ -43,8 +46,10 @@ export class StocksController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new stock (admin only)' })
   @ApiResponse({ status: 201, description: 'Stock created' })
-  createStock(@Body() dto: CreateStockDto) {
-    return this.stocksService.createStock(dto);
+  async createStock(@Body() dto: CreateStockDto) {
+    const result = await this.stocksService.createStock(dto);
+    await this.cache.clear();
+    return result;
   }
 
   @Put(':symbol')
@@ -54,8 +59,10 @@ export class StocksController {
   @ApiOperation({ summary: 'Update a stock by symbol (admin only)' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Stock updated' })
-  updateStock(@Param('symbol') symbol: string, @Body() dto: UpdateStockDto) {
-    return this.stocksService.updateStock(symbol, dto);
+  async updateStock(@Param('symbol') symbol: string, @Body() dto: UpdateStockDto) {
+    const result = await this.stocksService.updateStock(symbol, dto);
+    await this.cache.clear();
+    return result;
   }
 
   @Delete(':symbol')
@@ -65,8 +72,10 @@ export class StocksController {
   @ApiOperation({ summary: 'Soft-delete a stock by symbol (admin only)' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Stock deactivated' })
-  deleteStock(@Param('symbol') symbol: string) {
-    return this.stocksService.deleteStock(symbol);
+  async deleteStock(@Param('symbol') symbol: string) {
+    const result = await this.stocksService.deleteStock(symbol);
+    await this.cache.clear();
+    return result;
   }
 
   @Get(':symbol')

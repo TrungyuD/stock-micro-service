@@ -16,6 +16,8 @@ describe('StocksController', () => {
     deleteStock: jest.fn(),
   };
 
+  const mockCacheManager = { get: jest.fn(), set: jest.fn(), clear: jest.fn() };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -23,7 +25,7 @@ describe('StocksController', () => {
       controllers: [StocksController],
       providers: [
         { provide: StocksService, useValue: mockStocksService },
-        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn() } },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
@@ -90,7 +92,7 @@ describe('StocksController', () => {
   });
 
   describe('createStock', () => {
-    it('should delegate to stocksService.createStock', async () => {
+    it('should delegate to service and invalidate cache', async () => {
       const dto = { symbol: 'TEST', name: 'Test Inc.' };
       const mockResult = { stock: { symbol: 'TEST', name: 'Test Inc.' } };
       mockStocksService.createStock.mockResolvedValue(mockResult);
@@ -98,11 +100,12 @@ describe('StocksController', () => {
       const result = await controller.createStock(dto as any);
       expect(result).toEqual(mockResult);
       expect(mockStocksService.createStock).toHaveBeenCalledWith(dto);
+      expect(mockCacheManager.clear).toHaveBeenCalled();
     });
   });
 
   describe('updateStock', () => {
-    it('should delegate to stocksService.updateStock with symbol and dto', async () => {
+    it('should delegate to service and invalidate cache', async () => {
       const dto = { name: 'Updated Name' };
       const mockResult = { stock: { symbol: 'AAPL', name: 'Updated Name' } };
       mockStocksService.updateStock.mockResolvedValue(mockResult);
@@ -110,17 +113,19 @@ describe('StocksController', () => {
       const result = await controller.updateStock('AAPL', dto as any);
       expect(result).toEqual(mockResult);
       expect(mockStocksService.updateStock).toHaveBeenCalledWith('AAPL', dto);
+      expect(mockCacheManager.clear).toHaveBeenCalled();
     });
   });
 
   describe('deleteStock', () => {
-    it('should delegate to stocksService.deleteStock', async () => {
+    it('should delegate to service and invalidate cache', async () => {
       const mockResult = { success: true, message: 'Stock AAPL deactivated' };
       mockStocksService.deleteStock.mockResolvedValue(mockResult);
 
       const result = await controller.deleteStock('AAPL');
       expect(result).toEqual(mockResult);
       expect(mockStocksService.deleteStock).toHaveBeenCalledWith('AAPL');
+      expect(mockCacheManager.clear).toHaveBeenCalled();
     });
   });
 });
