@@ -6,6 +6,7 @@
  */
 import { Controller, Get, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom, Observable, timeout, catchError, of } from 'rxjs';
 import { DataSource } from 'typeorm';
@@ -15,6 +16,7 @@ interface HealthGrpcService {
   Check(req: Record<string, never>): Observable<any>;
 }
 
+@SkipThrottle()
 @ApiTags('health')
 @Controller('health')
 export class HealthController implements OnModuleInit {

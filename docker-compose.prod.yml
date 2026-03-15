@@ -105,17 +105,18 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      PORT: 5301
+      GATEWAY_PORT: 5301
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      INFORMER_URL: informer:5302
-      ANALYTICS_URL: analytics:5303
+      INFORMER_GRPC_URL: informer:5302
+      ANALYTICS_GRPC_URL: analytics:5303
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
       - "${GATEWAY_PORT:-5301}:5301"
     healthcheck:
