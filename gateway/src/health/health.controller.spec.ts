@@ -6,8 +6,8 @@ import { HealthController } from './health.controller';
 describe('HealthController', () => {
   let controller: HealthController;
 
-  const mockInformerGrpcService = { HealthCheck: jest.fn() };
-  const mockAnalyticsGrpcService = { HealthCheck: jest.fn() };
+  const mockInformerGrpcService = { Check: jest.fn() };
+  const mockAnalyticsGrpcService = { Check: jest.fn() };
 
   const mockInformerClient = {
     getService: jest.fn().mockReturnValue(mockInformerGrpcService),
@@ -39,8 +39,8 @@ describe('HealthController', () => {
 
   describe('check — all services up', () => {
     it('should return ok when all services healthy', async () => {
-      mockInformerGrpcService.HealthCheck.mockReturnValue(of({ status: 'SERVING' }));
-      mockAnalyticsGrpcService.HealthCheck.mockReturnValue(of({ status: 'SERVING' }));
+      mockInformerGrpcService.Check.mockReturnValue(of({ status: 'SERVING' }));
+      mockAnalyticsGrpcService.Check.mockReturnValue(of({ status: 'SERVING' }));
       mockDataSource.query.mockResolvedValue([{ '?column?': 1 }]);
 
       const result = await controller.check();
@@ -54,10 +54,10 @@ describe('HealthController', () => {
 
   describe('check — degraded when service down', () => {
     it('should return degraded when informer is down', async () => {
-      mockInformerGrpcService.HealthCheck.mockReturnValue(
+      mockInformerGrpcService.Check.mockReturnValue(
         throwError(() => new Error('Connection refused')),
       );
-      mockAnalyticsGrpcService.HealthCheck.mockReturnValue(of({ status: 'SERVING' }));
+      mockAnalyticsGrpcService.Check.mockReturnValue(of({ status: 'SERVING' }));
       mockDataSource.query.mockResolvedValue([{ '?column?': 1 }]);
 
       const result = await controller.check();
@@ -69,8 +69,8 @@ describe('HealthController', () => {
 
   describe('check — degraded when DB down', () => {
     it('should return degraded when database is unreachable', async () => {
-      mockInformerGrpcService.HealthCheck.mockReturnValue(of({ status: 'SERVING' }));
-      mockAnalyticsGrpcService.HealthCheck.mockReturnValue(of({ status: 'SERVING' }));
+      mockInformerGrpcService.Check.mockReturnValue(of({ status: 'SERVING' }));
+      mockAnalyticsGrpcService.Check.mockReturnValue(of({ status: 'SERVING' }));
       mockDataSource.query.mockRejectedValue(new Error('ECONNREFUSED'));
 
       const result = await controller.check();
