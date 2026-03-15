@@ -2,8 +2,9 @@
  * analytics.controller.ts — REST endpoints for stock analysis data.
  * Proxies to Analytics gRPC service via AnalyticsService.
  */
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { AnalyticsService } from './analytics.service';
 import { GetTechnicalIndicatorsQueryDto } from './dto/get-technical-indicators-query.dto';
 import { GetStockAnalysisQueryDto } from './dto/get-stock-analysis-query.dto';
@@ -16,6 +17,8 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get(':symbol')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Get combined stock analysis (valuation + technicals)' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Combined analysis with recommendation' })
@@ -27,6 +30,8 @@ export class AnalyticsController {
   }
 
   @Get(':symbol/valuation')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Get valuation metrics (P/E, P/B, PEG, etc.)' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Valuation metrics' })
@@ -35,6 +40,8 @@ export class AnalyticsController {
   }
 
   @Get(':symbol/technicals')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Get technical indicators (RSI, MACD, MAs, Bollinger)' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Technical indicator data' })

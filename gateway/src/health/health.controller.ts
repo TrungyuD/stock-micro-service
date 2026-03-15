@@ -59,10 +59,10 @@ export class HealthController implements OnModuleInit {
       const result = await lastValueFrom(
         svc.Check({}).pipe(
           timeout(3000),
-          catchError((err) => of({ status: 'error', error: err.message })),
+          catchError((err) => of({ error: err.message })),
         ),
       );
-      return { status: 'up', ...result };
+      return result.error ? { status: 'down', error: result.error } : { status: 'up' };
     } catch (err: any) {
       this.logger.warn(`${name} health check failed: ${err.message}`);
       return { status: 'down', error: err.message };

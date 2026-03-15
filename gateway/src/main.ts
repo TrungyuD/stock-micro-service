@@ -1,17 +1,21 @@
 /**
- * main.ts — NestJS bootstrap with Swagger, CORS, global validation,
+ * main.ts — NestJS bootstrap with Swagger, CORS, Helmet, global validation,
  * gRPC exception filter, and request logging interceptor.
  */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GrpcExceptionFilter } from './common/filters/grpc-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Security headers
+  app.use(helmet());
 
   // Cookie parser — needed for httpOnly refresh token cookies
   app.use(cookieParser());
@@ -20,9 +24,11 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  // CORS — allow all origins in development
+  // CORS — configurable via CORS_ORIGINS env var; allow all in development
+  const corsOrigins = process.env.CORS_ORIGINS;
+  const isDev = process.env.NODE_ENV !== 'production';
   app.enableCors({
-    origin: true,
+    origin: isDev ? true : corsOrigins?.split(',').map((o) => o.trim()) || true,
     methods: 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization,Accept',
     credentials: true,

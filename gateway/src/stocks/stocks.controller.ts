@@ -2,8 +2,9 @@
  * stocks.controller.ts — REST endpoints for stock data.
  * Proxies to Informer gRPC service via StocksService.
  */
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { StocksService } from './stocks.service';
 import { ListStocksQueryDto } from './dto/list-stocks-query.dto';
 import { GetPriceHistoryQueryDto } from './dto/get-price-history-query.dto';
@@ -21,6 +22,8 @@ export class StocksController {
   constructor(private readonly stocksService: StocksService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60_000)
   @ApiOperation({ summary: 'List tracked stocks with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Paginated stock list' })
   findAll(@Query() query: ListStocksQueryDto) {
@@ -67,6 +70,8 @@ export class StocksController {
   }
 
   @Get(':symbol')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30_000)
   @ApiOperation({ summary: 'Get stock metadata by symbol' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Stock info' })
@@ -76,6 +81,8 @@ export class StocksController {
   }
 
   @Get(':symbol/prices')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30_000)
   @ApiOperation({ summary: 'Get OHLCV price history for a symbol' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'OHLCV candle data' })
@@ -87,6 +94,8 @@ export class StocksController {
   }
 
   @Get(':symbol/financials')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Get financial reports for a symbol' })
   @ApiParam({ name: 'symbol', example: 'AAPL' })
   @ApiResponse({ status: 200, description: 'Financial reports list' })
