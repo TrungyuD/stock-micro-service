@@ -118,6 +118,12 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "${GATEWAY_PORT:-5301}:5301"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5301/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -147,9 +153,15 @@ services:
       HOSTNAME: "0.0.0.0"
     ports:
       - "${FRONTEND_PORT:-5300}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     networks:
       - stock_network
 
