@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { StocksController } from './stocks.controller';
 import { StocksService } from './stocks.service';
 
@@ -22,6 +23,7 @@ describe('StocksController', () => {
       controllers: [StocksController],
       providers: [
         { provide: StocksService, useValue: mockStocksService },
+        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn() } },
       ],
     }).compile();
 
